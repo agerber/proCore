@@ -37,11 +37,15 @@ class CommandCenter:
         self.universes = list(Universe)
 
 
-        # Anchor resource paths to the package layout, not the CWD, so the
-        # game runs from any working directory (e.g. `uv run main.py`).
-        base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-        self.snd = os.path.join(base_path, "resources", "sounds") + os.path.sep
-        self.img = os.path.join(base_path, "resources", "imgs") + os.path.sep
+        # Anchor resource paths to the repo's shared resources dir, not the CWD,
+        # so the game runs from any working directory. From this file
+        # (src/python/_08final/mvc/controller/) the resources live four levels
+        # up at src/resources/.
+        base_path = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "resources")
+        )
+        self.snd = os.path.join(base_path, "sounds") + os.path.sep
+        self.img = os.path.join(base_path, "imgs") + os.path.sep
 
         self.falcon = Falcon()
         self.radar = Radar()

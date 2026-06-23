@@ -1,3 +1,10 @@
+import os
+import sys
+
+# Allow running this file directly (`python mvc/controller/Game.py`) by putting
+# the package root (_08final/) on sys.path so the `mvc` package resolves.
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+
 import pygame
 
 from mvc.model.Movable import Movable

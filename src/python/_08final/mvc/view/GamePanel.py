@@ -19,7 +19,7 @@ class GamePanel:
     def __init__(self, dim):
 
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        FONT_PATH = os.path.join(base_dir, "..", "..", "resources", "font", "OpenSans-Bold.ttf")
+        FONT_PATH = os.path.join(base_dir, "..", "..", "..", "..", "resources", "font", "OpenSans-Bold.ttf")
         self.fontNormal = ImageFont.truetype(FONT_PATH, 14)
         self.fontBig = ImageFont.truetype(FONT_PATH, 22)
 
