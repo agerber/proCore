@@ -13,6 +13,16 @@
         <maven.compiler.target>18</maven.compiler.target>
     </properties>
 
+    <!-- Non-default layout: Java and Python live side-by-side under src/, sharing src/resources -->
+    <build>
+        <sourceDirectory>src/java</sourceDirectory>
+        <resources>
+            <resource>
+                <directory>src/resources</directory>
+            </resource>
+        </resources>
+    </build>
+
 
     <repositories>
         <repository>

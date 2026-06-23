@@ -1,0 +1,67 @@
+package _08final.mvc.model;
+
+import _08final.mvc.controller.CommandCenter;
+import _08final.mvc.controller.SoundLoader;
+
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+
+public class Bullet extends Sprite {
+
+    private static final Color PUMPKIN_LIGHT = new Color(240, 140, 90);
+
+    public Bullet(Falcon falcon) {
+
+        setTeam(Team.FRIEND);
+        setColor(PUMPKIN_LIGHT);
+
+        setExpiry(20);
+        setRadius(11);
+
+
+        //everything is relative to the falcon ship that fired the bullet.
+        // Try removing the clone call, then run, and see how the falcon behaves when you fire a bullet.
+        setCenter((Point)falcon.getCenter().clone());
+
+        //set the bullet orientation to the falcon (ship) orientation
+        setOrientation(falcon.getOrientation());
+
+        final double FIRE_POWER = 35.0;
+        double vectorX =
+                Math.cos(Math.toRadians(getOrientation())) * FIRE_POWER;
+        double vectorY =
+                Math.sin(Math.toRadians(getOrientation())) * FIRE_POWER;
+
+        //fire force: falcon inertia + fire-vector
+        setDeltaX(falcon.getDeltaX() + vectorX);
+        setDeltaY(falcon.getDeltaY() + vectorY);
+
+        //define the points on a cartesian grid
+        List<Point> listPoints = new ArrayList<>();
+        listPoints.add(new Point(0, 3)); //top point
+        listPoints.add(new Point(1, -1)); //right bottom
+        listPoints.add(new Point(0, 0));
+        listPoints.add(new Point(-1, -1)); //left bottom
+
+        setCartesians(listPoints.toArray(new Point[0]));
+
+
+
+
+    }
+
+
+    @Override
+    public void draw(Graphics g) {
+           renderVector(g);
+    }
+
+    @Override
+    public void addToGame(LinkedList<Movable> list) {
+        super.addToGame(list);
+        SoundLoader.playSound("thump.wav");
+
+    }
+}

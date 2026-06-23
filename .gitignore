@@ -1,7 +1,19 @@
 # Created by .ignore support plugin (hsz.mobi)
-# IntelliJ project files
+# JetBrains project files (IntelliJ + PyCharm both write to .idea)
 .idea
 *.iml
 out
 gen
+
+# Maven (Java) build output
+target
+
+# Python
+.venv
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# macOS
+.DS_Store
 
