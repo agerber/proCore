@@ -4,7 +4,6 @@ from PIL import Image, ImageFont
 
 from mvc.controller.CommandCenter import CommandCenter
 from mvc.controller.Utils import Utils
-from mvc.model.prime.Constants import DIM
 from mvc.model.prime.PolarPoint import PolarPoint
 from mvc.model.prime.Point import Point
 from mvc.view.GameFrame import GameFrame
@@ -18,8 +17,8 @@ import os
 class GamePanel:
     def __init__(self, dim):
 
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        FONT_PATH = os.path.join(base_dir, "..", "..", "..", "..", "resources", "font", "OpenSans-Bold.ttf")
+        baseDir = os.path.dirname(os.path.abspath(__file__))
+        FONT_PATH = os.path.join(baseDir, "..", "..", "..", "..", "resources", "font", "OpenSans-Bold.ttf")
         self.fontNormal = ImageFont.truetype(FONT_PATH, 14)
         self.fontBig = ImageFont.truetype(FONT_PATH, 22)
 
@@ -70,17 +69,17 @@ class GamePanel:
         self.gameFrame.setup(dim.width, dim.height, "Game Base")
 
     def drawFalconStatus(self, g):
+        from mvc.controller.Game import Game
         OFFSET_LEFT = 220
 
-        universe_str = CommandCenter.getInstance().universe.name
-        formatted_uni = universe_str.replace('_', ' ')
-        levelText = f"Level: [{CommandCenter.getInstance().level}] {formatted_uni}"
+        # draw the level in the upper-right corner
+        levelText = f"Level : [{CommandCenter.getInstance().level}]  {CommandCenter.getInstance().getUniName()}"
 
         g.setColor(Color.WHITE)
         g.setFont(self.fontNormal)
-        g.drawString(levelText, DIM.width - OFFSET_LEFT, 10)
-        formatted_score = "{:,}".format(CommandCenter.getInstance().score)
-        g.drawString(f"Score: {formatted_score}", DIM.width - OFFSET_LEFT, 30)
+        g.drawString(levelText, Game.DIM.width - OFFSET_LEFT, 10)
+        formattedScore = "{:,}".format(CommandCenter.getInstance().score)
+        g.drawString(f"Score: {formattedScore}", Game.DIM.width - OFFSET_LEFT, 30)
 
 
         statusArray = []
@@ -101,15 +100,16 @@ class GamePanel:
         # draw PYTHON VERSION and the frame number to bottom left screen
         g.drawString(f"FRAME[PYTHON]:{CommandCenter.getInstance().frame}",
                      self.fontWidth + 10,
-                     DIM.height - (self.fontHeight + 22))
+                     Game.DIM.height - (self.fontHeight + 22))
 
     # mirrors Java's GamePanel.update(Graphics g): creates an off-screen
     # double-buffer, draws into its Graphics context, then blits the
     # finished image to the on-screen tk Label in one swoop to avoid
     # flickering.
     def update(self):
+        from mvc.controller.Game import Game
 
-        imgOff = Image.new("RGB", (DIM.width, DIM.height), Color.BLACK)
+        imgOff = Image.new("RGB", (Game.DIM.width, Game.DIM.height), Color.BLACK)
         g = Graphics(imgOff)
 
         CommandCenter.getInstance().incrementFrame()
@@ -149,26 +149,27 @@ class GamePanel:
             numFalcons -= 1
 
     def drawOneShip(self, g, offSet):
+        from mvc.controller.Game import Game
 
         # rotate the ship 90 degrees
         DEGREES_90 = -90
-        RADIUS = 15
-        X_POS = DIM.width - (27 * offSet)
-        Y_POS = DIM.height - 20
+        SHIP_RADIUS = 15
+        X_POS = Game.DIM.width - (27 * offSet)
+        Y_POS = Game.DIM.height - 20
 
         # the reason we convert to polar-points is that it's much easier to rotate polar-points.
-        polars = Utils.cartesiansToPolar(self.pntShipsRemaining)
+        polars = Utils.cartesiansToPolars(self.pntShipsRemaining)
 
         # 2: rotate raw polars given the orientation of the sprite.
-        rotatePolarByOrientation = lambda pp: PolarPoint(
+        rotatePolarBy90 = lambda pp: PolarPoint(
             pp.r,
             pp.theta + math.radians(DEGREES_90)
         )
 
         # 3: convert the rotated polars back to cartesians
         polarToCartesian = lambda pp: Point(
-            int(pp.r * RADIUS * math.sin(pp.theta)),
-            int(pp.r * RADIUS * math.cos(pp.theta))
+            int(pp.r * SHIP_RADIUS * math.sin(pp.theta)),
+            int(pp.r * SHIP_RADIUS * math.cos(pp.theta))
         )
 
         # 4: adjust the cartesians for the location (center-point) of the sprite.
@@ -184,7 +185,7 @@ class GamePanel:
         g.setColor(Color.ORANGE)
         g.drawPolygon(
             seq(polars)\
-                .map(rotatePolarByOrientation)\
+                .map(rotatePolarBy90)\
                 .map(polarToCartesian)\
                 .map(adjustForLocation)\
                 .map(lambda point: (point.x, point.y))\
@@ -192,19 +193,20 @@ class GamePanel:
 
 
     def drawOneMeter(self, g, color: Tuple, offSet: int, percent: int):
-        xValBase = DIM.width - (100 + 120 * offSet)
-        yValBase = DIM.height - 20
+        from mvc.controller.Game import Game
+        xVal = Game.DIM.width - (100 + 120 * offSet)
+        yVal = Game.DIM.height - 20
 
         g.setColor(color)
-        g.fillRect(xValBase, yValBase, percent, 10)
+        g.fillRect(xVal, yVal, percent, 10)
         g.setColor(Color.GREY)
-        g.drawRect(xValBase, yValBase, 100, 10)
+        g.drawRect(xVal, yVal, 100, 10)
 
     def drawMeters(self, g):
 
-        sheildValue = CommandCenter.getInstance().falcon.shield // 2
+        shieldValue = CommandCenter.getInstance().falcon.shield // 2
         nukeValue = CommandCenter.getInstance().falcon.nukeMeter // 6
-        self.drawOneMeter(g, color=Color.CYAN, offSet=1, percent=sheildValue)
+        self.drawOneMeter(g, color=Color.CYAN, offSet=1, percent=shieldValue)
         self.drawOneMeter(g, color=Color.YELLOW, offSet=2, percent=nukeValue)
 
     def moveDrawMovables(self, g, *teams):
@@ -215,9 +217,10 @@ class GamePanel:
 
     # var-args as lines
     def displayTextOnScreen(self, g, *lines):
+        from mvc.controller.Game import Game
         g.setColor(Color.WHITE)
         g.setFont(self.fontNormal)
         yVal = 0
         for line in lines:
-            g.drawString(line, DIM.width // 2 - len(line) * 2.5 - 10, 200 + yVal)
+            g.drawString(line, Game.DIM.width // 2 - len(line) * 2.5 - 10, 200 + yVal)
             yVal += 40

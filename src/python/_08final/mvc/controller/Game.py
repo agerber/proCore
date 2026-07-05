@@ -14,19 +14,36 @@ from mvc.model.NukeFloater import NukeFloater
 from mvc.model.ShieldFloater import ShieldFloater
 #from pythonic.mvc.model.prime.Dimension import Dimension
 from mvc.view.GamePanel import GamePanel
-from mvc.controller.CommandCenter import CommandCenter, Universe
-from mvc.model import Falcon
+from mvc.controller.CommandCenter import CommandCenter
+from mvc.model.Falcon import Falcon, TurnState
 from mvc.model.Bullet import Bullet
 from mvc.controller.GameOp import GameOp
-from mvc.model.prime.Constants import DIM, SPAWN_SHIELD_FLOATER, SPAWN_NUKE_FLOATER, INITIAL_SPAWN_TIME
+from mvc.model.prime.Dimension import Dimension
 from mvc.model.prime.Point import Point
 from mvc.controller.SoundLoader import SoundLoader
+
+# in the Environmental Variables of the runtime configuration:
+# WIDTH=980;HEIGHT=600 or something like this.
+def _setDimFromEnv():
+    try:
+        width = int(os.getenv("WIDTH"))
+        height = int(os.getenv("HEIGHT"))
+        return Dimension(width, height)
+    except (TypeError, ValueError):
+        # some default value
+        return Dimension(1200, 700)
+
 
 # todo: refactor the code so that its in python style, and clean-up
 class Game:
     # ===============================================
     # FIELDS
     # ===============================================
+
+    # The dimension of the game-screen. Computed from env at class-definition (import)
+    # time so DIM is populated even when this file is loaded under two names: as
+    # __main__ (when run directly) AND as mvc.controller.Game (imported by the models).
+    DIM = _setDimFromEnv()
 
     ANIMATION_DELAY = 40  # milliseconds between frames
     FRAMES_PER_SECOND = 1000 // ANIMATION_DELAY
@@ -54,11 +71,16 @@ class Game:
     # ===============================================
 
     def __init__(self):
+        # DIM must be set before CommandCenter (which spawns sprites that read Game.DIM).
+        Game.DIM = self.setDimFromEnv()
         # one-shot pygame/mixer bootstrap; needs CommandCenter constructed first.
         CommandCenter.getInstance()
         SoundLoader.init()
-        #self.DIM = self.setDimFromEnv()
-        self.gamePanel = GamePanel(DIM)
+        self.gamePanel = GamePanel(Game.DIM)
+
+    @staticmethod
+    def setDimFromEnv():
+        return _setDimFromEnv()
 
     def checkCollisions(self):
 
@@ -110,7 +132,7 @@ class Game:
     # draw one frame, then sleep to cap the rate at FRAMES_PER_SECOND.
     def main(self):
         # start the theme music
-        SoundLoader.playLoopSound("dr_loop.wav")
+        SoundLoader.playSound("dr_loop.wav")
         CommandCenter.getInstance().getInstance().isMuted = False
 
         clock = pygame.time.Clock()
@@ -148,25 +170,26 @@ class Game:
 
         if not self.isLevelClear(): return
 
+        # currentLevel will be zero at beginning of game
         level = CommandCenter.getInstance().level
+        # award some points for having cleared the previous level
         CommandCenter.getInstance().score += 10_000 * level
 
-        # CommandCenter.getInstance().setUniverse(universe)
-        ordinal = level % len(Universe)
-        key = list(Universe)[ordinal]
-        CommandCenter.getInstance().universe = key
+        # recenter the falcon at level clears
+        CommandCenter.getInstance().falcon.center = Point(int(round(Game.DIM.width / 2.0)), int(round(Game.DIM.height / 2.0)))
 
+        # bump the level up
         level += 1
         CommandCenter.getInstance().level = level
 
-        #recenter the falcon at level clears
-        CommandCenter.getInstance().falcon.center = Point(int(round(DIM.width / 2.0)), int(round(DIM.height / 2.0)))
-
+        # spawn some big new asteroids
         self.spawnBigAsteroids(level)
-        if (CommandCenter.getInstance().falcon.shield < INITIAL_SPAWN_TIME):
-            CommandCenter.getInstance().falcon.shield = INITIAL_SPAWN_TIME
+        # make falcon invincible momentarily in case new asteroids spawn on top of him
+        if (CommandCenter.getInstance().falcon.shield < Falcon.INITIAL_SPAWN_TIME):
+            CommandCenter.getInstance().falcon.shield = Falcon.INITIAL_SPAWN_TIME
 
-        CommandCenter.getInstance().falcon.showLevel = INITIAL_SPAWN_TIME
+        # show "Level: [X] UNIVERSE" in middle of screen
+        CommandCenter.getInstance().falcon.showLevel = Falcon.INITIAL_SPAWN_TIME
 
     def isLevelClear(self):
         asteroidFree = True
@@ -186,11 +209,11 @@ class Game:
         self.spawnNukeFloater()
 
     def spawnNukeFloater(self):
-        if CommandCenter.getInstance().frame % SPAWN_NUKE_FLOATER == 0:
+        if CommandCenter.getInstance().frame % NukeFloater.SPAWN_NUKE_FLOATER == 0:
             CommandCenter.getInstance().opsQueue.enqueue(NukeFloater(), GameOp.Action.ADD)
 
     def spawnShieldFloater(self):
-        if CommandCenter.getInstance().frame % SPAWN_SHIELD_FLOATER == 0:
+        if CommandCenter.getInstance().frame % ShieldFloater.SPAWN_SHIELD_FLOATER == 0:
             CommandCenter.getInstance().opsQueue.enqueue(ShieldFloater(), GameOp.Action.ADD)
 
     def stopLoopingSounds(self, *sounds):
@@ -208,11 +231,11 @@ class Game:
             self.gamePanel.gameFrame.running = False
         elif keyCode == Game.UP:
             falcon.thrusting = True
-            SoundLoader.playLoopSound("whitenoise_loop.wav")
+            SoundLoader.playSound("whitenoise_loop.wav")
         elif keyCode == Game.LEFT:
-            falcon.turnState = Falcon.TurnState.LEFT
+            falcon.turnState = TurnState.LEFT
         elif keyCode == Game.RIGHT:
-            falcon.turnState = Falcon.TurnState.RIGHT
+            falcon.turnState = TurnState.RIGHT
 
     def keyReleased(self, keyCode):
         falcon = CommandCenter.getInstance().falcon
@@ -221,20 +244,20 @@ class Game:
         elif keyCode == Game.NUKE:
             CommandCenter.getInstance().opsQueue.enqueue(Nuke(falcon), GameOp.Action.ADD)
         elif keyCode == Game.RIGHT or keyCode == Game.LEFT:
-            falcon.turnState = Falcon.TurnState.IDLE
+            falcon.turnState = TurnState.IDLE
         elif keyCode == Game.UP:
             falcon.thrusting = False
-            SoundLoader.stopLoopSound("whitenoise_loop.wav")
+            SoundLoader.stopSound("whitenoise_loop.wav")
 
         elif keyCode == Game.SMART:
-            CommandCenter.getInstance().killAll()
+            CommandCenter.getInstance().killAllFoes()
 
         elif keyCode == Game.MUTE:
             if not CommandCenter.getInstance().getInstance().isMuted:
-                SoundLoader.stopLoopSound("dr_loop.wav")
+                SoundLoader.stopSound("dr_loop.wav")
                 CommandCenter.getInstance().getInstance().isMuted = True
             else:
-                SoundLoader.playLoopSound("dr_loop.wav")
+                SoundLoader.playSound("dr_loop.wav")
                 CommandCenter.getInstance().getInstance().isMuted = False
 
         elif keyCode == Game.RADAR:

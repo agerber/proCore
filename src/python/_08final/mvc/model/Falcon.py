@@ -9,7 +9,6 @@ from mvc.model.prime.Color import Color
 from enum import Enum
 import math
 
-from mvc.model.prime.Constants import INITIAL_SPAWN_TIME, DIM
 from mvc.model.prime.Point import Point
 from mvc.controller import ImageLoader
 from mvc.controller.CommandCenter import CommandCenter
@@ -34,6 +33,11 @@ class ImageState(Enum):
 class Falcon(Sprite):
     # number of degrees the falcon will turn at each animation cycle if the turnState is LEFT or RIGHT
     TURN_STEP = 11
+    # number of frames that the falcon will be protected after a spawn
+    INITIAL_SPAWN_TIME = 46
+    # number of frames falcon will be protected after consuming a ShieldFloater
+    MAX_SHIELD = 200
+    MAX_NUKE = 600
     MIN_RADIUS = 28
 
     def __init__(self):
@@ -150,12 +154,13 @@ class Falcon(Sprite):
     # this method is called when a falcon dies. It allows you to re-initialize the falcon settings without
     # removing him from the movFriends list. Therefore, falcon is never null, which is a good thing.
     def decrementFalconNumAndSpawn(self):
+        from mvc.controller.Game import Game
         CommandCenter.getInstance().numFalcons -= 1
         if CommandCenter.getInstance().isGameOver(): return
         SoundLoader.playSound("shipspawn.wav")
-        self.shield = INITIAL_SPAWN_TIME
-        self.invisible = INITIAL_SPAWN_TIME / 4
-        self.center = Point(DIM.width / 2, DIM.height / 2)
+        self.shield = Falcon.INITIAL_SPAWN_TIME
+        self.invisible = Falcon.INITIAL_SPAWN_TIME / 4
+        self.center = Point(Game.DIM.width / 2, Game.DIM.height / 2)
         self.orientation = random.randint(
             0, int(360 / Falcon.TURN_STEP)) * Falcon.TURN_STEP
         self.deltaX = 0

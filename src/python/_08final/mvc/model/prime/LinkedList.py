@@ -23,12 +23,12 @@ class LinkedList:
     def add(self, data):
         try:
             self.lock.acquire()
-            new_node = Node(data)
+            newNode = Node(data)
             if not self.head:
-                self.head = self.tail = new_node
+                self.head = self.tail = newNode
             else:
-                self.tail.next = new_node
-                self.tail = new_node
+                self.tail.next = newNode
+                self.tail = newNode
             self.count += 1
         finally:
             self.lock.release()
@@ -86,7 +86,7 @@ class LinkedList:
         finally:
             self.lock.release()
 
-    def print_list(self):
+    def printList(self):
         current = self.head
         while current:
             print(str(current.data), end=" -> ")

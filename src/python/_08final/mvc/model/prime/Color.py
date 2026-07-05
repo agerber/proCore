@@ -15,5 +15,5 @@ class Color:
     YELLOW: Tuple[int, int, int] = (255, 255, 0)
 
     @staticmethod
-    def from_RGB(r, g, b):
+    def fromRGB(r, g, b):
         return (r, g, b)

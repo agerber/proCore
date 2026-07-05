@@ -26,25 +26,37 @@ class SoundLoader:
         }
         cls._initialized = True
 
-    @classmethod
-    def playLoopSound(cls, name):
-        cls.soundDictionary.get(name).play(loops=-1)
+    @staticmethod
+    def loopedCondition(strPath):
+        return strPath.lower().endswith("_loop.wav")
 
+    # Used for both looped and non-looped clips (mirrors Java SoundLoader.playSound).
+    # Looped clips (suffixed _loop.wav) are fetched from the pre-loaded soundDictionary.
+    # Non-looped one-shot effects are loaded lazily and cached; pygame.mixer.Sound.play()
+    # is non-blocking and grabs a free channel on its own, so no thread pool is needed.
     @classmethod
-    def stopLoopSound(cls, name):
-        cls.soundDictionary.get(name).stop()
-
-    # Fire-and-forget one-shot effect. pygame.mixer.Sound.play() is
-    # non-blocking and grabs a free channel on its own, so no thread pool is
-    # needed; the Sound object is cached after first load.
-    @classmethod
-    def playSound(cls, name):
+    def playSound(cls, strPath):
+        if cls.loopedCondition(strPath):
+            clip = cls.soundDictionary.get(strPath)
+            if clip is not None:
+                clip.play(loops=-1)
+            return
         from mvc.controller.CommandCenter import CommandCenter
         try:
-            sound = cls._oneShotCache.get(name)
+            sound = cls._oneShotCache.get(strPath)
             if sound is None:
-                sound = pygame.mixer.Sound(CommandCenter.getInstance().snd + name)
-                cls._oneShotCache[name] = sound
+                sound = pygame.mixer.Sound(CommandCenter.getInstance().snd + strPath)
+                cls._oneShotCache[strPath] = sound
             sound.play()
         except Exception:
             pass
+
+    # Non-looped clips cannot be stopped, they simply expire on their own. Calling this
+    # method on a non-looped clip will do nothing.
+    @classmethod
+    def stopSound(cls, strPath):
+        if not cls.loopedCondition(strPath):
+            return
+        clip = cls.soundDictionary.get(strPath)
+        if clip is not None:
+            clip.stop()

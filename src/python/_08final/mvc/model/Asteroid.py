@@ -36,12 +36,12 @@ class Asteroid(Sprite):
 
             self.cartesians = self.generateVertices()
         else:
-            ast_exploded = value
-            self.__init__(ast_exploded.getSize() + 1)
-            self.center = ast_exploded.getCenter().clone()
-            new_smaller_size = ast_exploded.getSize() + 1
-            self.deltaX = ast_exploded.deltaX / 1.5 + self.somePosNegValue(5 + new_smaller_size * 2)
-            self.deltaY = ast_exploded.deltaY / 1.5 + self.somePosNegValue(5 + new_smaller_size * 2)
+            astExploded = value
+            self.__init__(astExploded.getSize() + 1)
+            self.center = astExploded.getCenter().clone()
+            newSmallerSize = astExploded.getSize() + 1
+            self.deltaX = astExploded.deltaX / 1.5 + self.somePosNegValue(5 + newSmallerSize * 2)
+            self.deltaY = astExploded.deltaY / 1.5 + self.somePosNegValue(5 + newSmallerSize * 2)
 
     # returns the log-base-2 of the ratio (1,2,4) , which is (0,1,2).... the size
     def getSize(self) -> int:
@@ -52,22 +52,24 @@ class Asteroid(Sprite):
 
     def removeFromGame(self, list):
         super().removeFromGame(list)
-        self.spawnSmallerAsteroidOrDebris(self)
-        CommandCenter.getInstance().score += 10 * (self.getSize() +1)
+        self.spawnSmallerAsteroidsOrDebris()
+        CommandCenter.getInstance().score += 10 * (self.getSize() + 1)
 
 
-    def spawnSmallerAsteroidOrDebris(self, originalAsteroid):
-        size = originalAsteroid.getSize()
+    def spawnSmallerAsteroidsOrDebris(self):
+        size = self.getSize()
+        # small (2) asteroids
         if size > 1:
             CommandCenter.getInstance(). \
                 opsQueue. \
-                enqueue(WhiteCloudDebris(originalAsteroid), GameOp.Action.ADD)
+                enqueue(WhiteCloudDebris(self), GameOp.Action.ADD)
             SoundLoader.playSound("pillow.wav")
         else:
+            # for large (0) and medium (1) sized Asteroids only, spawn 2 or 3 smaller asteroids respectively
             size += 2
             while size > 0:
                 CommandCenter.getInstance().opsQueue \
-                    .enqueue(Asteroid(originalAsteroid), GameOp.Action.ADD)
+                    .enqueue(Asteroid(self), GameOp.Action.ADD)
                 size -= 1
             SoundLoader.playSound("kapow.wav")
 

@@ -41,11 +41,11 @@ class CommandCenter:
         # so the game runs from any working directory. From this file
         # (src/python/_08final/mvc/controller/) the resources live four levels
         # up at src/resources/.
-        base_path = os.path.abspath(
+        basePath = os.path.abspath(
             os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "resources")
         )
-        self.snd = os.path.join(base_path, "sounds") + os.path.sep
-        self.img = os.path.join(base_path, "imgs") + os.path.sep
+        self.snd = os.path.join(basePath, "sounds") + os.path.sep
+        self.img = os.path.join(basePath, "imgs") + os.path.sep
 
         self.falcon = Falcon()
         self.radar = Radar()
@@ -93,13 +93,13 @@ class CommandCenter:
         self.isPaused = False
         self.isRadar = True
         self.numFalcons = 4
-        self.createStarField()
+        self.generateStarField()
         self.opsQueue.enqueue(self.falcon, GameOp.Action.ADD)
         self.opsQueue.enqueue(self.radar, GameOp.Action.ADD)
 
         self.falcon.decrementFalconNumAndSpawn()
 
-    def killAll(self):
+    def killAllFoes(self):
         for mov in self.movFoes:
             self.opsQueue.enqueue(mov, GameOp.Action.REMOVE)
 
@@ -110,7 +110,7 @@ class CommandCenter:
         self.movFoes.clear()
         self.movFloaters.clear()
 
-    def createStarField(self):
+    def generateStarField(self):
         from mvc.model.Star import Star
         count = 100
         while (count > 0):
@@ -125,7 +125,8 @@ class CommandCenter:
         return self.numFalcons < 1
 
     def isFalconPositionFixed(self):
-        return CommandCenter.getInstance().universe != Universe.FREE_FLY
+        uni = self.optUni()
+        return True if uni is None else uni.label.upper() != "FREE FLY"
 
     def optUni(self) -> Optional["Universe"]:
         if self.level == 0:

@@ -21,12 +21,12 @@ class GameFrame:
 
     # Blit a finished RGB PIL image to the screen in one swoop. frombuffer
     # shares the PIL bytes with no copy; flip() presents the back buffer.
-    def blit(self, pil_image):
+    def blit(self, pilImage):
         surface = pygame.image.frombuffer(
-            pil_image.tobytes(), pil_image.size, pil_image.mode
+            pilImage.tobytes(), pilImage.size, pilImage.mode
         )
         self.screen.blit(surface, (0, 0))
         pygame.display.flip()
 
-    def on_closing(self):
+    def onClosing(self):
         self.running = False

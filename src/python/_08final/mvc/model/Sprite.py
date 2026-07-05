@@ -10,7 +10,6 @@ from mvc.model.prime.PolarPoint import PolarPoint
 from functional import seq
 from abc import abstractmethod
 from mvc.model.prime.Color import Color
-from mvc.model.prime.Constants import DIM
 from mvc.controller.GameOp import GameOp
 from mvc.controller.CommandCenter import CommandCenter
 
@@ -21,8 +20,9 @@ class Sprite(Movable):
 
     def __init__(self):
 
-
-        self.center: Point = Point(random.randint(0, DIM.width), random.randint(0, DIM.height))
+        from mvc.controller.Game import Game
+        # place the sprite at some random location in the game-space at instantiation
+        self.center: Point = Point(random.randint(0, Game.DIM.width), random.randint(0, Game.DIM.height))
         self.deltaX: float = 0
         self.deltaY: float = 0
         self.team: Movable.Team = Movable.Team.DEBRIS
@@ -71,39 +71,42 @@ class Sprite(Movable):
     # subclass renders as raster or vector.
 
     def move(self) -> None:
-        scalerX = CommandCenter.getInstance().getUniDim().width
-        scalerY = CommandCenter.getInstance().getUniDim().height
+        from mvc.controller.Game import Game
+        # A scalar (larger than 1) allows the sprite to move beyond the bounds of the game-screen dimension
+        scalarX = CommandCenter.getInstance().getUniDim().width
+        scalarY = CommandCenter.getInstance().getUniDim().height
 
         # right - bounds reached
-        if self.center.x > scalerX * DIM.width:
+        if self.center.x > scalarX * Game.DIM.width:
             self.center.x = 1
         # left - bounds reached
         elif self.center.x < 0:
-            self.center.x = scalerX * DIM.width - 1
+            self.center.x = scalarX * Game.DIM.width - 1
         # bottom - bounds reached
-        elif self.center.y > scalerY * DIM.height:
+        elif self.center.y > scalarY * Game.DIM.height:
             self.center.y = 1
         # top - bounds reached
         elif self.center.y < 0:
-            self.center.y = scalerY * DIM.height - 1
+            self.center.y = scalarY * Game.DIM.height - 1
         else:
-            new_x_pos = self.center.x + self.deltaX
-            new_y_pos = self.center.y + self.deltaY
+            newXPos = self.center.x + self.deltaX
+            newYPos = self.center.y + self.deltaY
 
+            # if falcon-fixed, move the sprite in the opposite direction of the falcon to create centered-play
             if CommandCenter.getInstance().isFalconPositionFixed():
-                new_x_pos -= CommandCenter.getInstance().falcon.deltaX
-                new_y_pos -= CommandCenter.getInstance().falcon.deltaY
+                newXPos -= CommandCenter.getInstance().falcon.deltaX
+                newYPos -= CommandCenter.getInstance().falcon.deltaY
 
-            self.center.x = new_x_pos
-            self.center.y = new_y_pos
+            self.center.x = newXPos
+            self.center.y = newYPos
 
 
         if self.expiry > 0: self.expire()
         if self.spin != 0: self.orientation += self.spin
 
     def somePosNegValue(self, seed: int) -> int:
-        random_number = random.randint(0, seed - 1)
-        return random_number if random_number % 2 == 0 else -random_number
+        randomNumber = random.randint(0, seed - 1)
+        return randomNumber if randomNumber % 2 == 0 else -randomNumber
 
     def expire(self):
         if self.expiry == 1:
@@ -145,7 +148,7 @@ class Sprite(Movable):
 
         # 1: convert raw cartesians to raw polars (used later in seq below).
         # The reason we convert cartesian-points to polar-points is that it's much easier to rotate polar-points
-        polars = Utils.cartesiansToPolar(self.cartesians)
+        polars = Utils.cartesiansToPolars(self.cartesians)
 
         # 2: rotate raw polars given the orientation of the sprite.
 

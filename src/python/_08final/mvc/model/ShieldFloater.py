@@ -1,13 +1,16 @@
 from mvc.controller.SoundLoader import SoundLoader
 from mvc.controller.CommandCenter import CommandCenter
 
-from mvc.model.prime.Constants import MAX_SHIELD
+from mvc.model.Falcon import Falcon
 from mvc.model.Floater import Floater
 
 from mvc.model.prime.Color import Color
 
 
 class ShieldFloater(Floater):
+    # spawn every 40 seconds (in java Game.FRAMES_PER_SECOND * 25)
+    SPAWN_SHIELD_FLOATER = 1000
+
     def __init__(self):
         super().__init__()
         self.color = Color.CYAN
@@ -18,4 +21,4 @@ class ShieldFloater(Floater):
         # if expiry > 0, then this remove was the result of a collision w/Falcon, and not natural mortality.
         if (self.expiry > 0):
             SoundLoader.playSound("shieldup.wav")
-            CommandCenter.getInstance().falcon.shield = MAX_SHIELD
+            CommandCenter.getInstance().falcon.shield = Falcon.MAX_SHIELD

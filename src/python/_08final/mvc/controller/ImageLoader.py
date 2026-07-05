@@ -46,17 +46,17 @@ class ImageLoader:
             for file in files:
                 # Ignore hidden files
 
-                split_text = os.path.splitext(file)
-                if split_text[1] == '.png' and 'do_not_load' not in split_text[0]:
+                splitText = os.path.splitext(file)
+                if splitText[1] == '.png' and 'do_not_load' not in splitText[0]:
                     # print(os.path.join(currentPath,file))
-                    pngImages[split_text[0]] = ImageLoader.loadGraphic(os.path.join(currentPath, file))
+                    pngImages[splitText[0]] = ImageLoader.loadGraphic(os.path.join(currentPath, file))
 
         return pngImages
 
     @staticmethod
-    def loadGraphic(image_path: str) -> Image.Image:
+    def loadGraphic(imagePath: str) -> Image.Image:
         try:
-            buffered_image = Image.open(image_path)
+            bufferedImage = Image.open(imagePath)
         except IOError as e:
-            raise Exception(f"Cannot open image: {image_path}")
-        return buffered_image
+            raise Exception(f"Cannot open image: {imagePath}")
+        return bufferedImage

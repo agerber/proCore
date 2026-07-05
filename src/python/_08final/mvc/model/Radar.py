@@ -4,7 +4,6 @@ from mvc.model.Falcon import Falcon
 from mvc.model.Sprite import Sprite
 from mvc.model.Movable import Movable
 from mvc.model.prime.Color import Color
-from mvc.model.prime.Constants import DIM
 from mvc.model.prime.Point import Point
 from mvc.model.Nuke import Nuke
 from mvc.model.NukeFloater import NukeFloater
@@ -15,8 +14,8 @@ from mvc.controller.CommandCenter import CommandCenter
 class Radar(Sprite):
 
     RADAR_PERCENT = 0.31
-    PUMPKIN = Color.from_RGB(200, 100, 50)
-    LIGHT_GRAY = Color.from_RGB(200, 200, 200)
+    PUMPKIN = Color.fromRGB(200, 100, 50)
+    LIGHT_GRAY = Color.fromRGB(200, 200, 200)
 
     def __init__(self):
         super().__init__()
@@ -29,26 +28,27 @@ class Radar(Sprite):
         pass
 
     def draw(self, g):
+        from mvc.controller.Game import Game
         if not (CommandCenter.getInstance().isRadar): return
 
-        radarW = int(round(self.RADAR_PERCENT * DIM.width ))
-        radarH = int(round(self.RADAR_PERCENT * DIM.height))
+        radarWidth = int(round(self.RADAR_PERCENT * Game.DIM.width ))
+        radarHeight = int(round(self.RADAR_PERCENT * Game.DIM.height))
 
 
         # draw the entire universe bounding box (black fill, grey border)
         g.setColor(Color.BLACK)
-        g.fillRect(0, 0, radarW, radarH)
+        g.fillRect(0, 0, radarWidth, radarHeight)
         g.setColor(Color.GREY)
-        g.drawRect(0, 0, radarW, radarH)
+        g.drawRect(0, 0, radarWidth, radarHeight)
 
-        viewPortWidth = int(radarW / CommandCenter.getInstance().getUniDim().width)
-        viewPortHeight = int(radarH / CommandCenter.getInstance().getUniDim().height)
+        radarViewPortWidth = int(radarWidth / CommandCenter.getInstance().getUniDim().width)
+        radarViewPortHeight = int(radarHeight / CommandCenter.getInstance().getUniDim().height)
 
         # draw the portal bounding box
         g.setColor(Color.BLACK)
-        g.fillRect(0, 0, viewPortWidth, viewPortHeight)
+        g.fillRect(0, 0, radarViewPortWidth, radarViewPortHeight)
         g.setColor(Color.GREY)
-        g.drawRect(0, 0, viewPortWidth, viewPortHeight)
+        g.drawRect(0, 0, radarViewPortWidth, radarViewPortHeight)
 
         # draw foes blips
         for mov in CommandCenter.getInstance().movFoes:
@@ -87,7 +87,7 @@ class Radar(Sprite):
             g.setColor(color)
             g.fillOval(translatedPoint.x - 2, translatedPoint.y - 2, 4, 4)
 
-    def translatePoint(self, mov):
-        return Point(int(round(self.RADAR_PERCENT * mov.x / CommandCenter.getInstance().getUniDim().width )),
-                     int(round(self.RADAR_PERCENT * mov.y / CommandCenter.getInstance().getUniDim().height )))
+    def translatePoint(self, point):
+        return Point(int(round(self.RADAR_PERCENT * point.x / CommandCenter.getInstance().getUniDim().width )),
+                     int(round(self.RADAR_PERCENT * point.y / CommandCenter.getInstance().getUniDim().height )))
 
