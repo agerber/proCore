@@ -14,7 +14,7 @@ from mvc.controller.CommandCenter import CommandCenter
 
 class Radar(Sprite):
 
-    MINI_MAP_PERCENT = 0.31
+    RADAR_PERCENT = 0.31
     PUMPKIN = Color.from_RGB(200, 100, 50)
     LIGHT_GRAY = Color.from_RGB(200, 200, 200)
 
@@ -31,8 +31,8 @@ class Radar(Sprite):
     def draw(self, g):
         if not (CommandCenter.getInstance().isRadar): return
 
-        radarW = int(round(self.MINI_MAP_PERCENT * DIM.width ))
-        radarH = int(round(self.MINI_MAP_PERCENT * DIM.height))
+        radarW = int(round(self.RADAR_PERCENT * DIM.width ))
+        radarH = int(round(self.RADAR_PERCENT * DIM.height))
 
 
         # draw the entire universe bounding box (black fill, grey border)
@@ -88,6 +88,6 @@ class Radar(Sprite):
             g.fillOval(translatedPoint.x - 2, translatedPoint.y - 2, 4, 4)
 
     def translatePoint(self, mov):
-        return Point(int(round(self.MINI_MAP_PERCENT * mov.x / CommandCenter.getInstance().getUniDim().width )),
-                     int(round(self.MINI_MAP_PERCENT * mov.y / CommandCenter.getInstance().getUniDim().height )))
+        return Point(int(round(self.RADAR_PERCENT * mov.x / CommandCenter.getInstance().getUniDim().width )),
+                     int(round(self.RADAR_PERCENT * mov.y / CommandCenter.getInstance().getUniDim().height )))
 

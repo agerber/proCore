@@ -14,7 +14,7 @@ import java.awt.*;
 public class Radar extends Sprite {
 
 
-    //size of mini-map as percentage of screen (game dimension)
+    //size of radar as percentage of screen (game dimension)
     private static final double RADAR_PERCENT = 0.31;
     private static final Color PUMPKIN = new Color(200, 100, 50);
     private static final Color LIGHT_GRAY = new Color(200, 200, 200);
@@ -55,13 +55,13 @@ public class Radar extends Sprite {
         //draw the view-portal box
         Dimension uniDim = CommandCenter.getInstance().getUniDim();
         g.setColor(Color.DARK_GRAY);
-        int miniViewPortWidth = radarWidth / uniDim.width;
-        int miniViewPortHeight = radarHeight / uniDim.height;
+        int radarViewPortWidth = radarWidth / uniDim.width;
+        int radarViewPortHeight = radarHeight / uniDim.height;
         g.drawRect(
                 0 ,
                 0,
-                miniViewPortWidth,
-                miniViewPortHeight
+                radarViewPortWidth,
+                radarViewPortHeight
 
         );
 
