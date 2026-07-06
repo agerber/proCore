@@ -21,6 +21,9 @@ public class Asteroid extends Sprite {
 	//radius of a large asteroid
 	private final int LARGE_RADIUS = 110;
 
+	//points awarded to the player for each asteroid destroyed (scaled by size)
+	private static final long POINTS_PER_HIT = 10L;
+
 	//size determines if the Asteroid is Large (0), Medium (1), or Small (2)
 	public Asteroid(int size){
 
@@ -84,12 +87,12 @@ public class Asteroid extends Sprite {
 			return new PolarPoint(r, theta);
 		};
 
-		Comparator<PolarPoint> byTheta = Comparator.comparingDouble(PolarPoint::getTheta);
+		Comparator<PolarPoint> byTheta = Comparator.comparingDouble(PolarPoint::theta);
 
 		Function<PolarPoint, Point> toCartesian = pp -> {
 			double radiusScale = 1000.0;
-			int x = (int) (pp.getR() * radiusScale * Math.sin(pp.getTheta()));
-			int y = (int) (pp.getR() * radiusScale * Math.cos(pp.getTheta()));
+			int x = (int) (pp.r() * radiusScale * Math.sin(pp.theta()));
+			int y = (int) (pp.r() * radiusScale * Math.cos(pp.theta()));
 			return new Point(x, y);
 		};
 
@@ -113,16 +116,18 @@ public class Asteroid extends Sprite {
 		super.removeFromGame(list);
 		spawnSmallerAsteroidsOrDebris();
 		//give the user some points for destroying the asteroid
-		CommandCenter.getInstance().setScore(CommandCenter.getInstance().getScore() + 10L * (getSize() + 1));
+		CommandCenter cc = CommandCenter.getInstance();
+		cc.setScore(cc.getScore() + POINTS_PER_HIT * (getSize() + 1));
 
 	}
 
 	private void spawnSmallerAsteroidsOrDebris() {
 
+		CommandCenter cc = CommandCenter.getInstance();
 		int size = getSize();
 		//small (2) asteroids
 		if (size > 1) {
-			CommandCenter.getInstance().getOpsQueue().enqueue(new WhiteCloudDebris(this), GameOp.Action.ADD);
+			cc.getOpsQueue().enqueue(new WhiteCloudDebris(this), GameOp.Action.ADD);
 			SoundLoader.playSound("pillow.wav");
 		}
 		else {
@@ -130,7 +135,7 @@ public class Asteroid extends Sprite {
 			//We can use the existing variable (size) to do this
 			size += 2;
 			while (size-- > 0) {
-				CommandCenter.getInstance().getOpsQueue().enqueue(new Asteroid(this), GameOp.Action.ADD);
+				cc.getOpsQueue().enqueue(new Asteroid(this), GameOp.Action.ADD);
 			}
 			SoundLoader.playSound("kapow.wav");
 		}

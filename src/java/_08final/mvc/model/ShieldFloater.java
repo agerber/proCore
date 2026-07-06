@@ -10,9 +10,11 @@ import java.util.LinkedList;
 public class ShieldFloater extends Floater {
 	//spawn every 25 seconds
 	public static final int SPAWN_SHIELD_FLOATER = Game.FRAMES_PER_SECOND * 25;
+	//frames before this floater expires of natural mortality
+	public static final int EXPIRY = 260;
 	public ShieldFloater() {
 		setColor(Color.CYAN);
-		setExpiry(260);
+		setExpiry(EXPIRY);
 	}
 
 	@Override

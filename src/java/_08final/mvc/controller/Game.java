@@ -21,7 +21,9 @@ public class Game implements Runnable, KeyListener {
     // FIELDS
     // ===============================================
 
-    public static Dimension DIM; //the dimension of the game-screen.
+    //the dimension of the game-screen. Computed once at class-load from the environment so it is
+    //effectively-final and available before any Sprite (which reads Game.DIM) is constructed.
+    public static final Dimension DIM = setDimFromEnv();
 
 
 
@@ -32,6 +34,9 @@ public class Game implements Runnable, KeyListener {
     public final static int ANIMATION_DELAY = 40; // milliseconds between frames
 
     public final static int FRAMES_PER_SECOND = 1000 / ANIMATION_DELAY;
+
+    //points awarded for clearing a level (scaled by the level number)
+    public static final long LEVEL_CLEAR_BONUS = 10_000L;
 
     private final Thread animationThread;
 
@@ -56,7 +61,6 @@ public class Game implements Runnable, KeyListener {
     // ===============================================
 
     public Game() {
-        DIM = setDimFromEnv();
         gamePanel = new GamePanel(DIM);
         gamePanel.addKeyListener(this); //Game object implements KeyListener
         //fire up the animation thread
@@ -84,7 +88,7 @@ public class Game implements Runnable, KeyListener {
     in the Environmental Variables of the runtime configuration:
     WIDTH=980;HEIGHT=600 or something like this.
      */
-    private Dimension setDimFromEnv(){
+    private static Dimension setDimFromEnv(){
 
         Dimension dimension;
         try {
@@ -114,8 +118,17 @@ public class Game implements Runnable, KeyListener {
 
 
             //this call will cause all movables to move() and draw() themselves every ~40ms
-            // see GamePanel class for details
-            gamePanel.update(gamePanel.getGraphics());
+            // see GamePanel class for details.
+            //getGraphics() can return null if the panel is not (yet) displayable, e.g. minimized;
+            //guard against it and dispose the context we obtained to avoid leaking native resources.
+            Graphics graphics = gamePanel.getGraphics();
+            if (graphics != null) {
+                try {
+                    gamePanel.update(graphics);
+                } finally {
+                    graphics.dispose();
+                }
+            }
 
             checkCollisions();
             checkNewLevel();
@@ -158,11 +171,12 @@ public class Game implements Runnable, KeyListener {
 
     private void checkCollisions() {
 
+        CommandCenter cc = CommandCenter.getInstance();
         //This has order-of-growth of O(FOES * FRIENDS)
         Point pntFriendCenter, pntFoeCenter;
         int radFriend, radFoe;
-        for (Movable movFriend : CommandCenter.getInstance().getMovFriends()) {
-            for (Movable movFoe : CommandCenter.getInstance().getMovFoes()) {
+        for (Movable movFriend : cc.getMovFriends()) {
+            for (Movable movFoe : cc.getMovFoes()) {
 
                 pntFriendCenter = movFriend.getCenter();
                 pntFoeCenter = movFoe.getCenter();
@@ -172,26 +186,26 @@ public class Game implements Runnable, KeyListener {
                 //detect collision
                 if (pntFriendCenter.distance(pntFoeCenter) < (radFriend + radFoe)) {
                     //enqueue the friend
-                    CommandCenter.getInstance().getOpsQueue().enqueue(movFriend, GameOp.Action.REMOVE);
+                    cc.getOpsQueue().enqueue(movFriend, GameOp.Action.REMOVE);
                     //enqueue the foe
-                    CommandCenter.getInstance().getOpsQueue().enqueue(movFoe, GameOp.Action.REMOVE);
+                    cc.getOpsQueue().enqueue(movFoe, GameOp.Action.REMOVE);
                 }
             }//end inner for
         }//end outer for
 
         //check for collisions between falcon and floaters. Order of growth of O(FLOATERS)
-        Point pntFalCenter = CommandCenter.getInstance().getFalcon().getCenter();
-        int radFalcon = CommandCenter.getInstance().getFalcon().getRadius();
+        Point pntFalCenter = cc.getFalcon().getCenter();
+        int radFalcon = cc.getFalcon().getRadius();
 
         Point pntFloaterCenter;
         int radFloater;
-        for (Movable movFloater : CommandCenter.getInstance().getMovFloaters()) {
+        for (Movable movFloater : cc.getMovFloaters()) {
             pntFloaterCenter = movFloater.getCenter();
             radFloater = movFloater.getRadius();
             //detect collision
             if (pntFalCenter.distance(pntFloaterCenter) < (radFalcon + radFloater)) {
                 //enqueue the floater
-                CommandCenter.getInstance().getOpsQueue().enqueue(movFloater, GameOp.Action.REMOVE);
+                cc.getOpsQueue().enqueue(movFloater, GameOp.Action.REMOVE);
             }//end if
         }//end for
 
@@ -203,32 +217,23 @@ public class Game implements Runnable, KeyListener {
 
         //deferred mutation: these operations are done AFTER we have completed our collision detection to avoid
         // mutating the movable linkedlists while iterating them above.
-        while (!CommandCenter.getInstance().getOpsQueue().isEmpty()) {
+        CommandCenter cc = CommandCenter.getInstance();
+        while (!cc.getOpsQueue().isEmpty()) {
 
-            GameOp gameOp = CommandCenter.getInstance().getOpsQueue().dequeue();
+            GameOp gameOp = cc.getOpsQueue().dequeue();
 
             //given team, determine which linked-list this object will be added-to or removed-from
-            LinkedList<Movable> list;
-            Movable mov = gameOp.getMovable();
-            switch (mov.getTeam()) {
-                case FOE:
-                    list = CommandCenter.getInstance().getMovFoes();
-                    break;
-                case FRIEND:
-                    list = CommandCenter.getInstance().getMovFriends();
-                    break;
-                case FLOATER:
-                    list = CommandCenter.getInstance().getMovFloaters();
-                    break;
-                case DEBRIS:
-                default:
-                    list = CommandCenter.getInstance().getMovDebris();
-            }
+            Movable mov = gameOp.movable();
+            LinkedList<Movable> list = switch (mov.getTeam()) {
+                case FOE -> cc.getMovFoes();
+                case FRIEND -> cc.getMovFriends();
+                case FLOATER -> cc.getMovFloaters();
+                case DEBRIS -> cc.getMovDebris();
+            };
 
             //pass the appropriate linked-list from above
             //this block will execute the addToGame() or removeFromGame() callbacks in the Movable models.
-            GameOp.Action action = gameOp.getAction();
-            if (action == GameOp.Action.ADD)
+            if (gameOp.action() == GameOp.Action.ADD)
                 mov.addToGame(list);
             else //REMOVE
                 mov.removeFromGame(list);
@@ -238,18 +243,20 @@ public class Game implements Runnable, KeyListener {
 
 
     private void spawnShieldFloater() {
-        if (CommandCenter.getInstance().isGameOver() || CommandCenter.getInstance().isPaused()) return;
+        CommandCenter cc = CommandCenter.getInstance();
+        if (cc.isGameOver() || cc.isPaused()) return;
 
-        if (CommandCenter.getInstance().getFrame() % ShieldFloater.SPAWN_SHIELD_FLOATER == 0) {
-            CommandCenter.getInstance().getOpsQueue().enqueue(new ShieldFloater(), GameOp.Action.ADD);
+        if (cc.getFrame() % ShieldFloater.SPAWN_SHIELD_FLOATER == 0) {
+            cc.getOpsQueue().enqueue(new ShieldFloater(), GameOp.Action.ADD);
         }
     }
 
     private void spawnNukeFloater() {
-        if (CommandCenter.getInstance().isGameOver() || CommandCenter.getInstance().isPaused()) return;
+        CommandCenter cc = CommandCenter.getInstance();
+        if (cc.isGameOver() || cc.isPaused()) return;
 
-        if (CommandCenter.getInstance().getFrame() % NukeFloater.SPAWN_NUKE_FLOATER == 0) {
-            CommandCenter.getInstance().getOpsQueue().enqueue(new NukeFloater(), GameOp.Action.ADD);
+        if (cc.getFrame() % NukeFloater.SPAWN_NUKE_FLOATER == 0) {
+            cc.getOpsQueue().enqueue(new NukeFloater(), GameOp.Action.ADD);
         }
     }
 
@@ -257,9 +264,10 @@ public class Game implements Runnable, KeyListener {
     //this method spawns new Large (0) Asteroids
     private void spawnBigAsteroids(int num) {
 
+        CommandCenter cc = CommandCenter.getInstance();
         while (num-- > 0) {
             //Asteroids with size of zero are big
-            CommandCenter.getInstance().getOpsQueue().enqueue(new Asteroid(0), GameOp.Action.ADD);
+            cc.getOpsQueue().enqueue(new Asteroid(0), GameOp.Action.ADD);
 
         }
     }
@@ -285,23 +293,24 @@ public class Game implements Runnable, KeyListener {
         //short-circuit if level not yet cleared
         if (!isLevelClear()) return;
 
+        CommandCenter cc = CommandCenter.getInstance();
         //currentLevel will be zero at beginning of game
-        int level = CommandCenter.getInstance().getLevel();
+        int level = cc.getLevel();
         //award some points for having cleared the previous level
-        CommandCenter.getInstance().setScore(CommandCenter.getInstance().getScore() + (10_000L * level));
+        cc.setScore(cc.getScore() + (LEVEL_CLEAR_BONUS * level));
 
         //center the falcon at each level-clear
-        CommandCenter.getInstance().getFalcon().setCenter(new Point(Game.DIM.width / 2, Game.DIM.height / 2));
+        cc.getFalcon().setCenter(new Point(Game.DIM.width / 2, Game.DIM.height / 2));
 
         //bump the level up
-        CommandCenter.getInstance().setLevel(++level);
+        cc.setLevel(++level);
         //spawn some big new asteroids
         spawnBigAsteroids(level);
         //make falcon invincible momentarily in case new asteroids spawn on top of him, and give player
         //time to adjust to new universe and new asteroids in game space.
-        CommandCenter.getInstance().getFalcon().setShield(Falcon.INITIAL_SPAWN_TIME);
+        cc.getFalcon().setShield(Falcon.INITIAL_SPAWN_TIME);
         //show "Level: [X] UNIVERSE" in middle of screen
-        CommandCenter.getInstance().getFalcon().setShowLevel(Falcon.INITIAL_SPAWN_TIME);
+        cc.getFalcon().setShowLevel(Falcon.INITIAL_SPAWN_TIME);
 
 
     }
@@ -312,14 +321,15 @@ public class Game implements Runnable, KeyListener {
 
     @Override
     public void keyPressed(KeyEvent e) {
-        Falcon falcon = CommandCenter.getInstance().getFalcon();
+        CommandCenter cc = CommandCenter.getInstance();
+        Falcon falcon = cc.getFalcon();
         int keyCode = e.getKeyCode();
         switch (keyCode) {
             case FIRE:
-                CommandCenter.getInstance().getOpsQueue().enqueue(new Bullet(falcon), GameOp.Action.ADD);
+                cc.getOpsQueue().enqueue(new Bullet(falcon), GameOp.Action.ADD);
                 break;
             case NUKE:
-                CommandCenter.getInstance().getOpsQueue().enqueue(new Nuke(falcon), GameOp.Action.ADD);
+                cc.getOpsQueue().enqueue(new Nuke(falcon), GameOp.Action.ADD);
                 break;
             case UP:
                 falcon.setThrusting(true);
@@ -339,13 +349,14 @@ public class Game implements Runnable, KeyListener {
 
     @Override
     public void keyReleased(KeyEvent e) {
-        Falcon falcon = CommandCenter.getInstance().getFalcon();
+        CommandCenter cc = CommandCenter.getInstance();
+        Falcon falcon = cc.getFalcon();
         int keyCode = e.getKeyCode();
         //show the key-code in the console
         System.out.println(keyCode);
 
-        if (keyCode == START && CommandCenter.getInstance().isGameOver()) {
-            CommandCenter.getInstance().initGame();
+        if (keyCode == START && cc.isGameOver()) {
+            cc.initGame();
             return;
         }
 
@@ -361,28 +372,28 @@ public class Game implements Runnable, KeyListener {
                 SoundLoader.stopSound("whitenoise_loop.wav");
                 break;
             case PAUSE:
-                CommandCenter.getInstance().setPaused(!CommandCenter.getInstance().isPaused());
+                cc.setPaused(!cc.isPaused());
                 break;
             case KILL:
                 // cheat to speed game play during development
-                CommandCenter.getInstance().killAllFoes();
+                cc.killAllFoes();
                 break;
             case QUIT:
                 System.exit(0);
                 break;
             case RADAR:
                 //toggle the boolean switch
-                CommandCenter.getInstance().setRadarToggle(!CommandCenter.getInstance().isRadarToggle());
+                cc.setRadarToggle(!cc.isRadarToggle());
                 break;
             case MUTE:
                 //if music is currently playing, then stop
-                if (CommandCenter.getInstance().isThemeMusic()) {
+                if (cc.isThemeMusic()) {
                     SoundLoader.stopSound("dr_loop.wav");
                 } else { //else not playing, then play
                     SoundLoader.playSound("dr_loop.wav");
                 }
                 //toggle the boolean switch
-                CommandCenter.getInstance().setThemeMusic(!CommandCenter.getInstance().isThemeMusic());
+                cc.setThemeMusic(!cc.isThemeMusic());
                 break;
             default:
                 break;

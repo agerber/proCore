@@ -30,7 +30,8 @@ public class Radar extends Sprite {
     public void draw(Graphics g) {
 
         //controlled by the A-key
-        if (!CommandCenter.getInstance().isRadarToggle()) return;
+        CommandCenter cc = CommandCenter.getInstance();
+        if (!cc.isRadarToggle()) return;
 
         int radarWidth = (int) Math.round(RADAR_PERCENT * Game.DIM.width );
         int radarHeight = (int) Math.round(RADAR_PERCENT * Game.DIM.height );
@@ -53,7 +54,7 @@ public class Radar extends Sprite {
 
 
         //draw the view-portal box
-        Dimension uniDim = CommandCenter.getInstance().getUniDim();
+        Dimension uniDim = cc.getUniDim();
         g.setColor(Color.DARK_GRAY);
         int radarViewPortWidth = radarWidth / uniDim.width;
         int radarViewPortHeight = radarHeight / uniDim.height;
@@ -66,7 +67,7 @@ public class Radar extends Sprite {
         );
 
         //draw foe (asteroids) radar-blips
-        CommandCenter.getInstance().getMovFoes().forEach( mov -> {
+        cc.getMovFoes().forEach( mov -> {
                     Asteroid asteroid = (Asteroid) mov;
                     g.setColor(LIGHT_GRAY);
                     Point translatedPoint = translatePoint(asteroid.getCenter());
@@ -89,7 +90,7 @@ public class Radar extends Sprite {
 
 
         //draw floater radar-blips
-        CommandCenter.getInstance().getMovFloaters().forEach( mov -> {
+        cc.getMovFloaters().forEach( mov -> {
                     g.setColor(mov instanceof NukeFloater ? Color.YELLOW : Color.CYAN);
                     Point translatedPoint = translatePoint(mov.getCenter());
                     g.fillRect(translatedPoint.x - 2, translatedPoint.y - 2, 4, 4);
@@ -98,9 +99,9 @@ public class Radar extends Sprite {
 
 
         //draw friend radar-blips
-        CommandCenter.getInstance().getMovFriends().forEach( mov -> {
+        cc.getMovFriends().forEach( mov -> {
                     Color color;
-                    if (mov instanceof Falcon && CommandCenter.getInstance().getFalcon().getShield() > 0)
+                    if (mov instanceof Falcon && cc.getFalcon().getShield() > 0)
                         color = Color.CYAN;
                     else if (mov instanceof Nuke)
                         color = Color.YELLOW;

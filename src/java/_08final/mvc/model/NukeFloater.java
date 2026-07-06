@@ -11,9 +11,11 @@ public class NukeFloater extends Floater {
 
 	//spawn every 12 seconds
 	public static final int SPAWN_NUKE_FLOATER = Game.FRAMES_PER_SECOND * 12;
+	//frames before this floater expires of natural mortality
+	public static final int EXPIRY = 120;
 	public NukeFloater() {
 		setColor(Color.YELLOW);
-		setExpiry(120);
+		setExpiry(EXPIRY);
 	}
 
 	@Override

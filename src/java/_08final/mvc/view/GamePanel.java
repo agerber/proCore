@@ -29,6 +29,11 @@ public class GamePanel extends Panel {
     //used to draw number of ships remaining
     private final Point[] pntShipsRemaining;
 
+    //spacing (px) between the little ship icons that show remaining lives
+    private static final int SHIP_ICON_SPACING = 27;
+    //distance (px) from the bottom of the screen for the HUD row (ship icons and meters)
+    private static final int HUD_MARGIN_BOTTOM = 45;
+
     //used for double-buffering
     private Image imgOff;
     private Graphics grpOff;
@@ -108,20 +113,21 @@ public class GamePanel extends Panel {
         graphics.setFont(fontNormal);
         final int OFFSET_LEFT = 220;
 
+        CommandCenter cc = CommandCenter.getInstance();
+        Falcon falcon = cc.getFalcon();
 
         //draw the level upper-right corner
-        String levelText = "Level : [" + CommandCenter.getInstance().getLevel() + "]  " +
-                CommandCenter.getInstance().getUniName();
+        String levelText = "Level : [" + cc.getLevel() + "]  " + cc.getUniName();
         graphics.drawString(levelText, Game.DIM.width - OFFSET_LEFT, fontHeight); //upper-right corner
-        graphics.drawString("Score : " + decimalFormat.format(CommandCenter.getInstance().getScore()),
+        graphics.drawString("Score : " + decimalFormat.format(cc.getScore()),
                 Game.DIM.width - OFFSET_LEFT,
                 fontHeight * 2);
 
         //build the status string array with possible messages in middle of screen
         List<String> statusArray = new ArrayList<>();
-        if (CommandCenter.getInstance().getFalcon().getShowLevel() > 0) statusArray.add(levelText);
-        if (CommandCenter.getInstance().getFalcon().isMaxSpeedAttained()) statusArray.add("WARNING - SLOW DOWN");
-        if (CommandCenter.getInstance().getFalcon().getNukeMeter() > 0) statusArray.add("PRESS F for NUKE");
+        if (falcon.getShowLevel() > 0) statusArray.add(levelText);
+        if (falcon.isMaxSpeedAttained()) statusArray.add("WARNING - SLOW DOWN");
+        if (falcon.getNukeMeter() > 0) statusArray.add("PRESS F for NUKE");
 
             //draw the statusArray strings to middle of screen
         if (!statusArray.isEmpty())
@@ -143,8 +149,9 @@ public class GamePanel extends Panel {
     private void drawMeters(Graphics g){
 
         //will be a number between 0-100 inclusive
-        int shieldValue =   CommandCenter.getInstance().getFalcon().getShield() / 2;
-        int nukeValue = CommandCenter.getInstance().getFalcon().getNukeMeter() /6;
+        Falcon falcon = CommandCenter.getInstance().getFalcon();
+        int shieldValue = falcon.getShield() / 2;
+        int nukeValue = falcon.getNukeMeter() / 6;
 
         drawOneMeter(g, Color.CYAN, 1, shieldValue);
         drawOneMeter(g, Color.YELLOW, 2, nukeValue);
@@ -155,7 +162,7 @@ public class GamePanel extends Panel {
     private void drawOneMeter(Graphics g, Color color, int offSet, int percent) {
 
         int xVal = Game.DIM.width - (100 + 120 * offSet);
-        int yVal = Game.DIM.height - 45;
+        int yVal = Game.DIM.height - HUD_MARGIN_BOTTOM;
 
         //draw meter
         g.setColor(color);
@@ -181,7 +188,8 @@ public class GamePanel extends Panel {
         //this is used for development, you may remove drawNumFrame() in your final game.
         drawNumFrame(grpOff);
 
-        if (CommandCenter.getInstance().isGameOver()) {
+        CommandCenter cc = CommandCenter.getInstance();
+        if (cc.isGameOver()) {
             displayTextOnScreen(grpOff,
                     "GAME OVER",
                     "use the arrow keys to turn and thrust",
@@ -193,7 +201,7 @@ public class GamePanel extends Panel {
                     "'A' to toggle radar"
 
             );
-        } else if (CommandCenter.getInstance().isPaused()) {
+        } else if (cc.isPaused()) {
 
             displayTextOnScreen(grpOff, "Game Paused");
 
@@ -204,10 +212,10 @@ public class GamePanel extends Panel {
 
 
             moveDrawMovables(grpOff,
-                    CommandCenter.getInstance().getMovDebris(),
-                    CommandCenter.getInstance().getMovFloaters(),
-                    CommandCenter.getInstance().getMovFoes(),
-                    CommandCenter.getInstance().getMovFriends());
+                    cc.getMovDebris(),
+                    cc.getMovFloaters(),
+                    cc.getMovFoes(),
+                    cc.getMovFriends());
 
 
             drawNumberShipsRemaining(grpOff);
@@ -254,22 +262,22 @@ public class GamePanel extends Panel {
         g.setColor(Color.ORANGE);
 
         final int SHIP_RADIUS = 15;
-        final int X_POS = Game.DIM.width - (27 * offSet);
-        final int Y_POS = Game.DIM.height - 45;
+        final int X_POS = Game.DIM.width - (SHIP_ICON_SPACING * offSet);
+        final int Y_POS = Game.DIM.height - HUD_MARGIN_BOTTOM;
 
         //the reason we convert to polar-points is that it's much easier to rotate polar-points.
         List<PolarPoint> polars = Utils.cartesiansToPolars(pntShipsRemaining);
 
         Function<PolarPoint, PolarPoint> rotatePolarBy90 =
                 pp -> new PolarPoint(
-                        pp.getR(),
-                        pp.getTheta() + Math.toRadians(90.0) //rotated Theta
+                        pp.r(),
+                        pp.theta() + Math.toRadians(90.0) //rotated Theta
                 );
 
         Function<PolarPoint, Point> polarToCartesian =
                 pp -> new Point(
-                        (int)  (pp.getR() * SHIP_RADIUS * Math.sin(pp.getTheta())),
-                        (int)  (pp.getR() * SHIP_RADIUS * Math.cos(pp.getTheta())));
+                        (int)  (pp.r() * SHIP_RADIUS * Math.sin(pp.theta())),
+                        (int)  (pp.r() * SHIP_RADIUS * Math.cos(pp.theta())));
 
         Function<Point, Point> adjustForLocation =
                 pnt -> new Point(
@@ -301,12 +309,11 @@ public class GamePanel extends Panel {
     }
 
     private void initFontInfo() {
-        Graphics g = getGraphics();            // get the graphics context for the panel
-        g.setFont(fontNormal);                        // take care of some simple font stuff
-        fontMetrics = g.getFontMetrics();
+        // Component.getFontMetrics(Font) does not require a (possibly null) Graphics context,
+        // so font info can be computed safely even before the panel is displayable.
+        fontMetrics = getFontMetrics(fontNormal);
         fontWidth = fontMetrics.getMaxAdvance();
         fontHeight = fontMetrics.getHeight();
-        g.setFont(fontBig);                    // set font info
     }
 
 

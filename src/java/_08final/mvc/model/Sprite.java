@@ -87,8 +87,9 @@ public abstract class Sprite implements Movable {
         // where you need to override the move() method.
 
         //A scalar(larger than 1) allows the sprite to move beyond the bounds of the game-screen dimension
-        int scalarX = CommandCenter.getInstance().getUniDim().width;
-        int scalarY = CommandCenter.getInstance().getUniDim().height;
+        CommandCenter cc = CommandCenter.getInstance();
+        int scalarX = cc.getUniDim().width;
+        int scalarY = cc.getUniDim().height;
         //right-bounds reached
         if (center.x > scalarX * Game.DIM.width) {
             center.x = 1;
@@ -106,9 +107,9 @@ public abstract class Sprite implements Movable {
             double newXPos = center.x;
             double newYPos = center.y;
             //if falcon-fixed, move the sprite in the opposite direction of the falcon to create centered-play
-            if (CommandCenter.getInstance().isFalconPositionFixed()){
-                newXPos -= CommandCenter.getInstance().getFalcon().getDeltaX();
-                newYPos -= CommandCenter.getInstance().getFalcon().getDeltaY();
+            if (cc.isFalconPositionFixed()){
+                newXPos -= cc.getFalcon().getDeltaX();
+                newYPos -= cc.getFalcon().getDeltaY();
             }
             center.x = (int) Math.round(newXPos + getDeltaX());
             center.y = (int) Math.round(newYPos + getDeltaY());
@@ -197,15 +198,15 @@ public abstract class Sprite implements Movable {
         //2: rotate raw polars given the orientation of the sprite.
         Function<PolarPoint, PolarPoint> rotatePolarByOrientation =
                 pp -> new PolarPoint(
-                        pp.getR(),
-                        pp.getTheta() + Math.toRadians(orientation) //rotated Theta
+                        pp.r(),
+                        pp.theta() + Math.toRadians(orientation) //rotated Theta
                 );
 
         //3: convert the rotated polars back to cartesians
         Function<PolarPoint, Point> polarToCartesian =
                 pp -> new Point(
-                        (int)  (pp.getR() * getRadius() * Math.sin(pp.getTheta())),
-                        (int)  (pp.getR() * getRadius() * Math.cos(pp.getTheta())));
+                        (int)  (pp.r() * getRadius() * Math.sin(pp.theta())),
+                        (int)  (pp.r() * getRadius() * Math.cos(pp.theta())));
 
         //4: adjust the cartesians for the location (center-point) of the sprite.
         // the reason we subtract the y-value has to do with how Java plots the vertical axis for

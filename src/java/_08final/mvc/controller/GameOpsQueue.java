@@ -8,15 +8,22 @@ import java.util.concurrent.LinkedBlockingDeque;
 /**
  * Effectively a Queue that enqueues and dequeues Game Operations (add/remove).
  * enqueue() may be called by main and animation threads simultaneously, therefore we
- * use a data structure from the java.util.concurrent package.
+ * compose a data structure from the java.util.concurrent package rather than exposing
+ * the entire Deque API through inheritance.
  */
-public class GameOpsQueue extends LinkedBlockingDeque<GameOp> {
+public class GameOpsQueue {
+
+    private final LinkedBlockingDeque<GameOp> deque = new LinkedBlockingDeque<>();
 
     public void enqueue(Movable mov, GameOp.Action action) {
-        addLast(new GameOp(mov, action));
+        deque.addLast(new GameOp(mov, action));
     }
 
     public GameOp dequeue() {
-        return removeFirst();
+        return deque.removeFirst();
+    }
+
+    public boolean isEmpty() {
+        return deque.isEmpty();
     }
 }

@@ -198,8 +198,9 @@ public class Falcon extends Sprite {
 
 	public void decrementFalconNumAndSpawn(){
 
-		CommandCenter.getInstance().setNumFalcons(CommandCenter.getInstance().getNumFalcons() -1);
-		if (CommandCenter.getInstance().isGameOver()) return;
+		CommandCenter cc = CommandCenter.getInstance();
+		cc.setNumFalcons(cc.getNumFalcons() -1);
+		if (cc.isGameOver()) return;
 		SoundLoader.playSound("shipspawn.wav");
 		setShield(Falcon.INITIAL_SPAWN_TIME);
 		setInvisible(Falcon.INITIAL_SPAWN_TIME/5);

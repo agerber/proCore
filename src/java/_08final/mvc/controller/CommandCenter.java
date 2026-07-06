@@ -3,7 +3,6 @@ package _08final.mvc.controller;
 
 import java.awt.*;
 import _08final.mvc.model.*;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.util.LinkedHashMap;
@@ -135,18 +134,18 @@ public class CommandCenter {
 
 	public Dimension getUniDim(){
 		Optional<Universe> universe = optUni();
-		return universe.isEmpty() ? new Dimension(1,1) : universe.get().getDimension();
+		return universe.isEmpty() ? new Dimension(1,1) : universe.get().dimension();
 
 	}
 
 	public String getUniName(){
 		Optional<Universe> universe = optUni();
-		return universe.isEmpty() ? "" : universe.get().getName();
+		return universe.isEmpty() ? "" : universe.get().name();
 	}
 
 	public boolean isFalconPositionFixed(){
 		Optional<Universe> universe = optUni();
-		return universe.isEmpty() ? true : (!universe.get().getName().equalsIgnoreCase("FREE FLY"));
+		return universe.isEmpty() ? true : (!universe.get().name().equalsIgnoreCase("FREE FLY"));
 	}
 	private Optional<Universe> optUni() {
 		if (getLevel() == 0) {
@@ -156,12 +155,8 @@ public class CommandCenter {
 		return Optional.of(universes[index]);
 	}
 
-	//inner class
-	@Data
-	@AllArgsConstructor
-	class Universe {
-		private String name;
-		private Dimension dimension;
+	//inner record associating a universe name with its dimension (as a multiple of the game screen)
+	record Universe(String name, Dimension dimension) {
 	}
 
 }
