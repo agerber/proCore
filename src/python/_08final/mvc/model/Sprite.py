@@ -72,9 +72,10 @@ class Sprite(Movable):
 
     def move(self) -> None:
         from mvc.controller.Game import Game
+        cc = CommandCenter.getInstance()
         # A scalar (larger than 1) allows the sprite to move beyond the bounds of the game-screen dimension
-        scalarX = CommandCenter.getInstance().getUniDim().width
-        scalarY = CommandCenter.getInstance().getUniDim().height
+        scalarX = cc.getUniDim().width
+        scalarY = cc.getUniDim().height
 
         # right - bounds reached
         if self.center.x > scalarX * Game.DIM.width:
@@ -93,9 +94,9 @@ class Sprite(Movable):
             newYPos = self.center.y + self.deltaY
 
             # if falcon-fixed, move the sprite in the opposite direction of the falcon to create centered-play
-            if CommandCenter.getInstance().isFalconPositionFixed():
-                newXPos -= CommandCenter.getInstance().falcon.deltaX
-                newYPos -= CommandCenter.getInstance().falcon.deltaY
+            if cc.isFalconPositionFixed():
+                newXPos -= cc.falcon.deltaX
+                newYPos -= cc.falcon.deltaY
 
             self.center.x = newXPos
             self.center.y = newYPos

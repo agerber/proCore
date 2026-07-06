@@ -1,5 +1,5 @@
 import os
-from enum import Enum
+from dataclasses import dataclass
 from typing import Optional
 
 
@@ -34,7 +34,14 @@ class CommandCenter:
         self.isMuted = True
         self.frame = 0
         self.isRadar = False
-        self.universes = list(Universe)
+        self.universes = [
+            Universe("FREE FLY", Dimension(1, 1)),
+            Universe("CENTER", Dimension(1, 1)),
+            Universe("BIG", Dimension(3, 3)),
+            Universe("HORIZONTAL", Dimension(3, 1)),
+            Universe("VERTICAL", Dimension(1, 3)),
+            Universe("DARK", Dimension(4, 4)),
+        ]
 
 
         # Anchor resource paths to the repo's shared resources dir, not the CWD,
@@ -126,7 +133,7 @@ class CommandCenter:
 
     def isFalconPositionFixed(self):
         uni = self.optUni()
-        return True if uni is None else uni.label.upper() != "FREE FLY"
+        return True if uni is None else uni.name.upper() != "FREE FLY"
 
     def optUni(self) -> Optional["Universe"]:
         if self.level == 0:
@@ -140,17 +147,12 @@ class CommandCenter:
 
     def getUniName(self):
         uni = self.optUni()
-        return "" if uni is None else uni.label
+        return "" if uni is None else uni.name
 
-class Universe(Enum):
-    FREE_FLY   = ("FREE FLY",   Dimension(1, 1))
-    CENTER     = ("CENTER",     Dimension(1, 1))
-    BIG        = ("BIG",        Dimension(3, 3))
-    HORIZONTAL = ("HORIZONTAL", Dimension(3, 1))
-    VERTICAL   = ("VERTICAL",   Dimension(1, 3))
-    DARK       = ("DARK",       Dimension(4, 4))
 
-    def __init__(self, name, dimension):
-        self.label = name            # string name
-        self.dimension = dimension    # Dimension object
+# record associating a universe name with its dimension (as a multiple of the game screen)
+@dataclass(frozen=True)
+class Universe:
+    name: str
+    dimension: Dimension
 

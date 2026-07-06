@@ -3,7 +3,11 @@ from dataclasses import dataclass
 
 from mvc.model.Movable import Movable
 
-@dataclass
+
+# The GameOp (short for Game Operation) associates a movable with an action. Once the
+# GameOpsQueue is processed it will add/remove movables from their appropriate list in the
+# CommandCenter depending on the movable's team. Modelled as an immutable record (frozen dataclass).
+@dataclass(frozen=True)
 class GameOp:
 
     class Action(Enum):
@@ -12,4 +16,3 @@ class GameOp:
 
     movable: Movable
     action: Action
-

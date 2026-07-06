@@ -15,6 +15,11 @@ import os
 
 
 class GamePanel:
+    # spacing (px) between the little ship icons that show remaining lives
+    SHIP_ICON_SPACING = 27
+    # distance (px) from the bottom of the screen for the HUD row (ship icons and meters)
+    HUD_MARGIN_BOTTOM = 20
+
     def __init__(self, dim):
 
         baseDir = os.path.dirname(os.path.abspath(__file__))
@@ -72,25 +77,28 @@ class GamePanel:
         from mvc.controller.Game import Game
         OFFSET_LEFT = 220
 
+        cc = CommandCenter.getInstance()
+        falcon = cc.falcon
+
         # draw the level in the upper-right corner
-        levelText = f"Level : [{CommandCenter.getInstance().level}]  {CommandCenter.getInstance().getUniName()}"
+        levelText = f"Level : [{cc.level}]  {cc.getUniName()}"
 
         g.setColor(Color.WHITE)
         g.setFont(self.fontNormal)
         g.drawString(levelText, Game.DIM.width - OFFSET_LEFT, 10)
-        formattedScore = "{:,}".format(CommandCenter.getInstance().score)
+        formattedScore = "{:,}".format(cc.score)
         g.drawString(f"Score: {formattedScore}", Game.DIM.width - OFFSET_LEFT, 30)
 
 
         statusArray = []
 
-        if CommandCenter.getInstance().falcon.showLevel > 0:
+        if falcon.showLevel > 0:
             statusArray.append(levelText)
 
-        if CommandCenter.getInstance().falcon.nukeMeter > 0:
+        if falcon.nukeMeter > 0:
             statusArray.append("Press 'F' for Nuke")
 
-        if CommandCenter.getInstance().falcon.maxSpeedAttained:
+        if falcon.maxSpeedAttained:
             statusArray.append("WARNING - SLOW DOWN")
 
         # draw the statusArray strings to middle of screen. unpack the list to satisfy the var-args definition.
@@ -98,7 +106,7 @@ class GamePanel:
             self.displayTextOnScreen(g, *statusArray)
 
         # draw PYTHON VERSION and the frame number to bottom left screen
-        g.drawString(f"FRAME[PYTHON]:{CommandCenter.getInstance().frame}",
+        g.drawString(f"FRAME[PYTHON]:{cc.frame}",
                      self.fontWidth + 10,
                      Game.DIM.height - (self.fontHeight + 22))
 
@@ -112,9 +120,10 @@ class GamePanel:
         imgOff = Image.new("RGB", (Game.DIM.width, Game.DIM.height), Color.BLACK)
         g = Graphics(imgOff)
 
-        CommandCenter.getInstance().incrementFrame()
+        cc = CommandCenter.getInstance()
+        cc.incrementFrame()
 
-        if CommandCenter.getInstance().isGameOver():
+        if cc.isGameOver():
             self.displayTextOnScreen(g,
                                      "GAME OVER",
                                      "use the arrow keys to turn and thrust",
@@ -126,14 +135,14 @@ class GamePanel:
                                      "'A' to toggle radar"
                                      )
 
-        elif CommandCenter.getInstance().isPaused:
+        elif cc.isPaused:
             self.displayTextOnScreen(g, "Game Paused")
         else:
             self.moveDrawMovables(g,
-                                  CommandCenter.getInstance().movDebris,
-                                  CommandCenter.getInstance().movFloaters,
-                                  CommandCenter.getInstance().movFoes,
-                                  CommandCenter.getInstance().movFriends)
+                                  cc.movDebris,
+                                  cc.movFloaters,
+                                  cc.movFoes,
+                                  cc.movFriends)
 
             self.drawMeters(g)
             self.drawFalconStatus(g)
@@ -154,8 +163,8 @@ class GamePanel:
         # rotate the ship 90 degrees
         DEGREES_90 = -90
         SHIP_RADIUS = 15
-        X_POS = Game.DIM.width - (27 * offSet)
-        Y_POS = Game.DIM.height - 20
+        X_POS = Game.DIM.width - (GamePanel.SHIP_ICON_SPACING * offSet)
+        Y_POS = Game.DIM.height - GamePanel.HUD_MARGIN_BOTTOM
 
         # the reason we convert to polar-points is that it's much easier to rotate polar-points.
         polars = Utils.cartesiansToPolars(self.pntShipsRemaining)
@@ -195,7 +204,7 @@ class GamePanel:
     def drawOneMeter(self, g, color: Tuple, offSet: int, percent: int):
         from mvc.controller.Game import Game
         xVal = Game.DIM.width - (100 + 120 * offSet)
-        yVal = Game.DIM.height - 20
+        yVal = Game.DIM.height - GamePanel.HUD_MARGIN_BOTTOM
 
         g.setColor(color)
         g.fillRect(xVal, yVal, percent, 10)
@@ -204,8 +213,9 @@ class GamePanel:
 
     def drawMeters(self, g):
 
-        shieldValue = CommandCenter.getInstance().falcon.shield // 2
-        nukeValue = CommandCenter.getInstance().falcon.nukeMeter // 6
+        falcon = CommandCenter.getInstance().falcon
+        shieldValue = falcon.shield // 2
+        nukeValue = falcon.nukeMeter // 6
         self.drawOneMeter(g, color=Color.CYAN, offSet=1, percent=shieldValue)
         self.drawOneMeter(g, color=Color.YELLOW, offSet=2, percent=nukeValue)
 

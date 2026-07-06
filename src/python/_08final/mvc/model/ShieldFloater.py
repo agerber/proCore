@@ -10,11 +10,13 @@ from mvc.model.prime.Color import Color
 class ShieldFloater(Floater):
     # spawn every 40 seconds (in java Game.FRAMES_PER_SECOND * 25)
     SPAWN_SHIELD_FLOATER = 1000
+    # frames before this floater expires of natural mortality
+    EXPIRY = 260
 
     def __init__(self):
         super().__init__()
         self.color = Color.CYAN
-        self.expiry = 260
+        self.expiry = ShieldFloater.EXPIRY
 
     def removeFromGame(self, list):
         super().removeFromGame(list)

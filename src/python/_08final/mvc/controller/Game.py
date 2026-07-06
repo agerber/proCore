@@ -48,6 +48,9 @@ class Game:
     ANIMATION_DELAY = 40  # milliseconds between frames
     FRAMES_PER_SECOND = 1000 // ANIMATION_DELAY
 
+    # points awarded for clearing a level (scaled by the level number)
+    LEVEL_CLEAR_BONUS = 10_000
+
     # key-codes (pygame key constants)
     PAUSE = pygame.K_p  # p key
     QUIT = pygame.K_q  # q key
@@ -71,8 +74,8 @@ class Game:
     # ===============================================
 
     def __init__(self):
-        # DIM must be set before CommandCenter (which spawns sprites that read Game.DIM).
-        Game.DIM = self.setDimFromEnv()
+        # DIM is computed once at class-definition time (see Game.DIM above), so there is no
+        # need to reassign it here; it is already available before CommandCenter spawns sprites.
         # one-shot pygame/mixer bootstrap; needs CommandCenter constructed first.
         CommandCenter.getInstance()
         SoundLoader.init()
@@ -84,42 +87,44 @@ class Game:
 
     def checkCollisions(self):
 
+        cc = CommandCenter.getInstance()
         # this has an order of growth of O(FRIENDS * FOES)
-        for movFriend in CommandCenter.getInstance().movFriends:
-            for movFoe in CommandCenter.getInstance().movFoes:
+        for movFriend in cc.movFriends:
+            for movFoe in cc.movFoes:
                 pntFriendCenter = movFriend.getCenter()
                 pntFoeCenter = movFoe.getCenter()
                 radFriend = movFriend.getRadius()
                 radFoe = movFoe.getRadius()
                 if pntFriendCenter.distance(pntFoeCenter) < (radFoe + radFriend):
-                    CommandCenter.getInstance().opsQueue.enqueue(movFriend, GameOp.Action.REMOVE)
-                    CommandCenter.getInstance().opsQueue.enqueue(movFoe, GameOp.Action.REMOVE)
+                    cc.opsQueue.enqueue(movFriend, GameOp.Action.REMOVE)
+                    cc.opsQueue.enqueue(movFoe, GameOp.Action.REMOVE)
 
-        pntFalcon = CommandCenter.getInstance().falcon.center
-        radFalcon = CommandCenter.getInstance().falcon.getRadius()
+        pntFalcon = cc.falcon.center
+        radFalcon = cc.falcon.getRadius()
         # this has an order of growth of O(FLOATERS)
-        for movFloater in CommandCenter.getInstance().movFloaters:
+        for movFloater in cc.movFloaters:
             pntFloaterCenter = movFloater.getCenter()
             radFloater = movFloater.getRadius()
             if (pntFalcon.distance(pntFloaterCenter) < (radFalcon + radFloater)):
-                CommandCenter.getInstance().opsQueue.enqueue(movFloater, GameOp.Action.REMOVE)
+                cc.opsQueue.enqueue(movFloater, GameOp.Action.REMOVE)
 
     def processGameOpsQueue(self):
         # deferred mutation: these operations are done AFTER we have completed our collision detection to avoid
         # mutating the movable linkedlists while iterating them above.
-        while len(CommandCenter.getInstance().opsQueue) > 0:
-            gameOp = CommandCenter.getInstance().opsQueue.dequeue()
+        cc = CommandCenter.getInstance()
+        while not cc.opsQueue.isEmpty():
+            gameOp = cc.opsQueue.dequeue()
             mov = gameOp.movable
 
             list = None
             if mov.getTeam() == Movable.Team.FOE:
-                list = CommandCenter.getInstance().movFoes
+                list = cc.movFoes
             elif mov.getTeam() == Movable.Team.FRIEND:
-                list = CommandCenter.getInstance().movFriends
+                list = cc.movFriends
             elif mov.getTeam() == Movable.Team.FLOATER:
-                list = CommandCenter.getInstance().movFloaters
+                list = cc.movFloaters
             else: # mov.getTeam() == Movable.Team.DEBRIS:
-                list = CommandCenter.getInstance().movDebris
+                list = cc.movDebris
 
             # the following block executes the callbacks
             action = gameOp.action
@@ -133,7 +138,7 @@ class Game:
     def main(self):
         # start the theme music
         SoundLoader.playSound("dr_loop.wav")
-        CommandCenter.getInstance().getInstance().isMuted = False
+        CommandCenter.getInstance().isMuted = False
 
         clock = pygame.time.Clock()
         gameFrame = self.gamePanel.gameFrame
@@ -170,26 +175,27 @@ class Game:
 
         if not self.isLevelClear(): return
 
+        cc = CommandCenter.getInstance()
         # currentLevel will be zero at beginning of game
-        level = CommandCenter.getInstance().level
+        level = cc.level
         # award some points for having cleared the previous level
-        CommandCenter.getInstance().score += 10_000 * level
+        cc.score += Game.LEVEL_CLEAR_BONUS * level
 
         # recenter the falcon at level clears
-        CommandCenter.getInstance().falcon.center = Point(int(round(Game.DIM.width / 2.0)), int(round(Game.DIM.height / 2.0)))
+        cc.falcon.center = Point(int(round(Game.DIM.width / 2.0)), int(round(Game.DIM.height / 2.0)))
 
         # bump the level up
         level += 1
-        CommandCenter.getInstance().level = level
+        cc.level = level
 
         # spawn some big new asteroids
         self.spawnBigAsteroids(level)
         # make falcon invincible momentarily in case new asteroids spawn on top of him
-        if (CommandCenter.getInstance().falcon.shield < Falcon.INITIAL_SPAWN_TIME):
-            CommandCenter.getInstance().falcon.shield = Falcon.INITIAL_SPAWN_TIME
+        if (cc.falcon.shield < Falcon.INITIAL_SPAWN_TIME):
+            cc.falcon.shield = Falcon.INITIAL_SPAWN_TIME
 
         # show "Level: [X] UNIVERSE" in middle of screen
-        CommandCenter.getInstance().falcon.showLevel = Falcon.INITIAL_SPAWN_TIME
+        cc.falcon.showLevel = Falcon.INITIAL_SPAWN_TIME
 
     def isLevelClear(self):
         asteroidFree = True
@@ -200,8 +206,9 @@ class Game:
         return asteroidFree
 
     def spawnBigAsteroids(self, num):
+        cc = CommandCenter.getInstance()
         while num > 0:
-            CommandCenter.getInstance().opsQueue.enqueue(Asteroid(0), GameOp.Action.ADD)
+            cc.opsQueue.enqueue(Asteroid(0), GameOp.Action.ADD)
             num -= 1
 
     def checkFloaters(self):
@@ -209,24 +216,27 @@ class Game:
         self.spawnNukeFloater()
 
     def spawnNukeFloater(self):
-        if CommandCenter.getInstance().frame % NukeFloater.SPAWN_NUKE_FLOATER == 0:
-            CommandCenter.getInstance().opsQueue.enqueue(NukeFloater(), GameOp.Action.ADD)
+        cc = CommandCenter.getInstance()
+        if cc.frame % NukeFloater.SPAWN_NUKE_FLOATER == 0:
+            cc.opsQueue.enqueue(NukeFloater(), GameOp.Action.ADD)
 
     def spawnShieldFloater(self):
-        if CommandCenter.getInstance().frame % ShieldFloater.SPAWN_SHIELD_FLOATER == 0:
-            CommandCenter.getInstance().opsQueue.enqueue(ShieldFloater(), GameOp.Action.ADD)
+        cc = CommandCenter.getInstance()
+        if cc.frame % ShieldFloater.SPAWN_SHIELD_FLOATER == 0:
+            cc.opsQueue.enqueue(ShieldFloater(), GameOp.Action.ADD)
 
     def stopLoopingSounds(self, *sounds):
         [sound.stop() for sound in sounds if hasattr(sound, "stop")]
 
     def keyPressed(self, keyCode):
-        falcon = CommandCenter.getInstance().falcon
+        cc = CommandCenter.getInstance()
+        falcon = cc.falcon
         # print(keyCode)
-        if keyCode == Game.START and CommandCenter.getInstance().isGameOver():
-            CommandCenter.getInstance().initGame()
+        if keyCode == Game.START and cc.isGameOver():
+            cc.initGame()
             return
         if keyCode == Game.PAUSE:
-            CommandCenter.getInstance().isPaused = not CommandCenter.getInstance().isPaused
+            cc.isPaused = not cc.isPaused
         elif keyCode == Game.QUIT:
             self.gamePanel.gameFrame.running = False
         elif keyCode == Game.UP:
@@ -238,11 +248,12 @@ class Game:
             falcon.turnState = TurnState.RIGHT
 
     def keyReleased(self, keyCode):
-        falcon = CommandCenter.getInstance().falcon
+        cc = CommandCenter.getInstance()
+        falcon = cc.falcon
         if keyCode == Game.FIRE:
-            CommandCenter.getInstance().opsQueue.enqueue(Bullet(falcon), GameOp.Action.ADD)
+            cc.opsQueue.enqueue(Bullet(falcon), GameOp.Action.ADD)
         elif keyCode == Game.NUKE:
-            CommandCenter.getInstance().opsQueue.enqueue(Nuke(falcon), GameOp.Action.ADD)
+            cc.opsQueue.enqueue(Nuke(falcon), GameOp.Action.ADD)
         elif keyCode == Game.RIGHT or keyCode == Game.LEFT:
             falcon.turnState = TurnState.IDLE
         elif keyCode == Game.UP:
@@ -250,18 +261,18 @@ class Game:
             SoundLoader.stopSound("whitenoise_loop.wav")
 
         elif keyCode == Game.SMART:
-            CommandCenter.getInstance().killAllFoes()
+            cc.killAllFoes()
 
         elif keyCode == Game.MUTE:
-            if not CommandCenter.getInstance().getInstance().isMuted:
+            if not cc.isMuted:
                 SoundLoader.stopSound("dr_loop.wav")
-                CommandCenter.getInstance().getInstance().isMuted = True
+                cc.isMuted = True
             else:
                 SoundLoader.playSound("dr_loop.wav")
-                CommandCenter.getInstance().getInstance().isMuted = False
+                cc.isMuted = False
 
         elif keyCode == Game.RADAR:
-            CommandCenter.getInstance().isRadar = not CommandCenter.getInstance().isRadar
+            cc.isRadar = not cc.isRadar
 
 if __name__ == "__main__":
     game = Game()

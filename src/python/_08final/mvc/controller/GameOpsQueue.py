@@ -16,5 +16,5 @@ class GameOpsQueue:
     def dequeue(self) -> GameOp:
         return self.llist.dequeue()
 
-    def __len__(self):
-        return self.llist.count
+    def isEmpty(self) -> bool:
+        return self.llist.count == 0

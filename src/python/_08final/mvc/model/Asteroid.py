@@ -15,6 +15,9 @@ from functional import seq
 
 class Asteroid(Sprite):
 
+    # points awarded to the player for each asteroid destroyed (scaled by size)
+    POINTS_PER_HIT = 10
+
     def __init__(self, value):
         super().__init__()
         self.value = value
@@ -53,23 +56,23 @@ class Asteroid(Sprite):
     def removeFromGame(self, list):
         super().removeFromGame(list)
         self.spawnSmallerAsteroidsOrDebris()
-        CommandCenter.getInstance().score += 10 * (self.getSize() + 1)
+        # give the user some points for destroying the asteroid
+        cc = CommandCenter.getInstance()
+        cc.score += Asteroid.POINTS_PER_HIT * (self.getSize() + 1)
 
 
     def spawnSmallerAsteroidsOrDebris(self):
+        cc = CommandCenter.getInstance()
         size = self.getSize()
         # small (2) asteroids
         if size > 1:
-            CommandCenter.getInstance(). \
-                opsQueue. \
-                enqueue(WhiteCloudDebris(self), GameOp.Action.ADD)
+            cc.opsQueue.enqueue(WhiteCloudDebris(self), GameOp.Action.ADD)
             SoundLoader.playSound("pillow.wav")
         else:
             # for large (0) and medium (1) sized Asteroids only, spawn 2 or 3 smaller asteroids respectively
             size += 2
             while size > 0:
-                CommandCenter.getInstance().opsQueue \
-                    .enqueue(Asteroid(self), GameOp.Action.ADD)
+                cc.opsQueue.enqueue(Asteroid(self), GameOp.Action.ADD)
                 size -= 1
             SoundLoader.playSound("kapow.wav")
 

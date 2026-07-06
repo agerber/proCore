@@ -29,7 +29,8 @@ class Radar(Sprite):
 
     def draw(self, g):
         from mvc.controller.Game import Game
-        if not (CommandCenter.getInstance().isRadar): return
+        cc = CommandCenter.getInstance()
+        if not (cc.isRadar): return
 
         radarWidth = int(round(self.RADAR_PERCENT * Game.DIM.width ))
         radarHeight = int(round(self.RADAR_PERCENT * Game.DIM.height))
@@ -41,8 +42,8 @@ class Radar(Sprite):
         g.setColor(Color.GREY)
         g.drawRect(0, 0, radarWidth, radarHeight)
 
-        radarViewPortWidth = int(radarWidth / CommandCenter.getInstance().getUniDim().width)
-        radarViewPortHeight = int(radarHeight / CommandCenter.getInstance().getUniDim().height)
+        radarViewPortWidth = int(radarWidth / cc.getUniDim().width)
+        radarViewPortHeight = int(radarHeight / cc.getUniDim().height)
 
         # draw the portal bounding box
         g.setColor(Color.BLACK)
@@ -51,7 +52,7 @@ class Radar(Sprite):
         g.drawRect(0, 0, radarViewPortWidth, radarViewPortHeight)
 
         # draw foes blips
-        for mov in CommandCenter.getInstance().movFoes:
+        for mov in cc.movFoes:
             translatedPoint = self.translatePoint(mov.getCenter())
             asteroid: Asteroid = mov
 
@@ -70,14 +71,14 @@ class Radar(Sprite):
 
 
         # draw floaters blips
-        for mov in CommandCenter.getInstance().movFloaters:
+        for mov in cc.movFloaters:
             translatedPoint = self.translatePoint(mov.getCenter())
             g.setColor(Color.YELLOW if isinstance(mov, NukeFloater) else Color.CYAN)
             g.fillOval(translatedPoint.x - 2, translatedPoint.y - 2, 4, 4)
 
         # draw friends blips
-        for mov in CommandCenter.getInstance().movFriends:
-            if isinstance(mov, Falcon) and CommandCenter.getInstance().falcon.shield > 0:
+        for mov in cc.movFriends:
+            if isinstance(mov, Falcon) and cc.falcon.shield > 0:
                 color = Color.CYAN
             elif isinstance(mov, Nuke):
                 color = Color.YELLOW

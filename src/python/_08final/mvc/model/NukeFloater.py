@@ -9,12 +9,14 @@ from mvc.model.prime.Color import Color
 class NukeFloater(Floater):
     # spawn every 14 seconds (in java Game.FRAMES_PER_SECOND * 12)
     SPAWN_NUKE_FLOATER = 350
+    # frames before this floater expires of natural mortality
+    EXPIRY = 350
 
     def __init__(self):
         super().__init__()
         #yellow
         self.color = Color.YELLOW
-        self.expiry = 350
+        self.expiry = NukeFloater.EXPIRY
 
 
 

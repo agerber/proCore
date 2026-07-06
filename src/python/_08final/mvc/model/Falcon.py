@@ -155,8 +155,9 @@ class Falcon(Sprite):
     # removing him from the movFriends list. Therefore, falcon is never null, which is a good thing.
     def decrementFalconNumAndSpawn(self):
         from mvc.controller.Game import Game
-        CommandCenter.getInstance().numFalcons -= 1
-        if CommandCenter.getInstance().isGameOver(): return
+        cc = CommandCenter.getInstance()
+        cc.numFalcons -= 1
+        if cc.isGameOver(): return
         SoundLoader.playSound("shipspawn.wav")
         self.shield = Falcon.INITIAL_SPAWN_TIME
         self.invisible = Falcon.INITIAL_SPAWN_TIME / 4
