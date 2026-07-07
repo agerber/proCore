@@ -31,6 +31,9 @@ public class CommandCenter {
 	private final Falcon falcon  = new Falcon();
 	private final Radar radar = new Radar();
 
+	//inner record associating a universe name with its dimension (as a multiple of the game screen)
+	record Universe(String name, Dimension dimension) { }
+
 	private final Universe[] universes =  new Universe[] {
 			new Universe("FREE FLY", new Dimension(1, 1)),
 			new Universe("CENTER", new Dimension(1, 1)),
@@ -153,10 +156,6 @@ public class CommandCenter {
 		}
 		int index = (getLevel() - 1) % universes.length;
 		return Optional.of(universes[index]);
-	}
-
-	//inner record associating a universe name with its dimension (as a multiple of the game screen)
-	record Universe(String name, Dimension dimension) {
 	}
 
 }
