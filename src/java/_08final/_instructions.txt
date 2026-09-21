@@ -34,7 +34,7 @@ Create a classic video game using the tools you've learned throughout the quarte
  the Game and CommandCenter classes to suit your game, and make other necessary changes. Failing to extend the base-code
  will result in an automatic and non-negotiable zero on this evaluation.
 2/ You can create any video game you want, EXCEPT Asteroids.
-3/ You may code your game in either Java or Kotlin; see README.md of proJava for Kotlin instructions.
+3/ You may code your game in either Java or Kotlin; see README.md of proCore for Kotlin instructions.
 
 The reason I require students to extend the base-code architecture is to: (1) level the playing field,
 (2) provide a foundation upon which students can build, and (3) provide implementations for
