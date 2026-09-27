@@ -29,3 +29,9 @@ Composite
 Pipleline
 Facade
 
+## Python Game Base translation
+The final project base code has been translated into python. To run it from IntelliJ Ultimate, you will create a new 
+run configuration with the following settings:
+
+Use specified interpreter: uv
+script: src/python/_08final/mvc/controller/Game.py
