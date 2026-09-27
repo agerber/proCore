@@ -19,3 +19,5 @@ __pycache__/
 
 # Local notes (not versioned)
 /memory/
+students.txt
+.claude/
