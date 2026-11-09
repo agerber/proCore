@@ -53,10 +53,11 @@ public class Falcon extends Sprite {
 	// methods are being called every ~40ms, this is a very convenient place to store this variable.
 	private int showLevel;
 
-	/* TODO The enums ImageState and TurnState, as well as the boolean thrusting are examples of the State design
-	    pattern. This pattern
-	allows an object to change its behavior when its internal state changes. In this case, the boolean thrusting, and
-	 the ImageState, and TurnState (with values IDLE, LEFT, and RIGHT) affects how the Falcon moves and draws itself.
+	/* NOTE TurnState, ImageState and the boolean thrusting are state *flags*, and the switch on turnState in move()
+	 is exactly the code that the GoF STATE pattern exists to replace; so this is not the State pattern. In State,
+	 each state is an object (or an enum constant with its own method body) that carries the behavior, and the
+	 owner delegates to it: turnState.adjust(orientation) instead of switch (turnState). With three states and one
+	 switch the flags are the simpler and better choice; see Chapter 43 for when the pattern earns its weight.
 	 */
 	public enum TurnState {IDLE, LEFT, RIGHT}
 	private TurnState turnState = TurnState.IDLE;

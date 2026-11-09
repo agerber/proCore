@@ -173,6 +173,13 @@ public class GamePanel extends Panel {
         g.drawRect(xVal, yVal, 100, 10);
     }
 
+    /* TODO PATTERN 10 of 10: DOUBLE BUFFER (Game Programming Patterns). A frame is never drawn directly to the
+       screen. update() paints the whole scene onto an off-screen image (imgOff), and only when every sprite and
+       every HUD element is in place does the last line copy the finished image to the visible surface in one
+       operation. The player therefore never sees a half-drawn frame (tearing/flicker), at the cost of one extra
+       image's worth of memory. The two buffers are the "current" and "next" frames; here the next one is
+       recreated each frame rather than swapped.
+     */
     @Override
     public void update(Graphics g) {
 

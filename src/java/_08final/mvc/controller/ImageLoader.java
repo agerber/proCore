@@ -19,6 +19,15 @@ Place all .png image assets in src/resources/imgs (or its subdirectories). Maven
 onto the classpath (see pom.xml), so images are resolved via the classpath rather than the current
 working directory. All raster images are loaded in static context prior to runtime.
  */
+/* TODO PATTERN 8 of 10 (second instance): FACADE. ImageLoader hides ImageIO, URL/URI resolution and the
+   Files.walkFileTree visitor behind a single static getImage(path). See SoundLoader for the first instance.
+
+   TODO PATTERN 9 of 10: FLYWEIGHT. Every BufferedImage is decoded exactly once, in the static context, and stored
+   in IMAGE_MAP; every sprite that needs an image shares the same instance. A hundred WhiteCloudDebris explosions
+   hold a hundred small maps of references, not a hundred copies of nine PNGs. The image is the *intrinsic*
+   (shared, immutable) state; center, orientation and radius are the *extrinsic* state each sprite keeps for itself
+   and passes to renderRaster(). Sharing works only because nobody mutates the shared images.
+ */
 public class ImageLoader {
 
     //classpath root under which the images live, e.g. keys look like "/imgs/fal/falcon125.png"

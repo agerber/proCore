@@ -48,9 +48,11 @@ class Falcon(Sprite):
         self.maxSpeedAttained = False
         self.showLevel = 0
 
-        # TODO The enum TurnState as well as the boolean thrusting are examples of the State design pattern. This pattern
-        # allows an object to change its behavior when its internal state changes. In this case, the boolean thrusting and
-        # the TurnState (with values IDLE, LEFT, and RIGHT) affect how the Falcon moves and draws itself.
+        # NOTE TurnState, ImageState and the boolean thrusting are state *flags*, and the branching on turnState in
+        # move() is exactly the code the GoF STATE pattern exists to replace; so this is not the State pattern. In
+        # State, each state is an object (in Python, often an Enum member whose method body carries the behavior) and
+        # the owner delegates to it: self.turnState.adjust(orientation) instead of if/elif on the value. With three
+        # states and one branch the flags are the simpler and better choice; see Chapter 44 for when the pattern pays.
         self.thrusting = False
         self.turnState = TurnState.IDLE
 

@@ -14,6 +14,14 @@ import java.util.Random;
 // ===============================================
 // == This Game class is the CONTROLLER
 // ===============================================
+/* TODO PATTERN 2 of 10: MODEL-VIEW-CONTROLLER (an architectural pattern). The three packages are the three roles.
+   MODEL (mvc.model): Movable, Sprite and its subclasses hold position, velocity, team and know how to move() and
+   draw() themselves, but know nothing about keyboards or windows. VIEW (mvc.view): GameFrame and GamePanel own the
+   window and the off-screen image; GamePanel.update() asks every model object to draw itself. CONTROLLER
+   (mvc.controller): Game translates keystrokes into model changes, runs the frame loop, detects collisions and
+   spawns sprites; CommandCenter holds the model's aggregate state. The separation is what lets the same models be
+   rendered by a different view (the Python port renders the same design with PIL and tkinter).
+ */
 
 public class Game implements Runnable, KeyListener {
 
@@ -62,6 +70,13 @@ public class Game implements Runnable, KeyListener {
 
     public Game() {
         gamePanel = new GamePanel(DIM);
+        /* TODO PATTERN 4 of 10: OBSERVER. Swing's listener model is the Observer pattern. GamePanel is the subject
+           (it owns the keyboard focus); Game is the observer; addKeyListener() is the subscribe step; and whenever a
+           key event occurs, Swing calls back keyPressed()/keyReleased() below on the Event Dispatch Thread. The
+           panel never references Game by type, only through the KeyListener interface, so any number of listeners
+           could be added without changing the panel. Note that the lifecycle callbacks addToGame()/removeFromGame()
+           in Movable are NOT Observer: nobody subscribes to them, they are hook methods (see Movable and Sprite).
+         */
         gamePanel.addKeyListener(this); //Game object implements KeyListener
         //fire up the animation thread
         animationThread = new Thread(this); // pass the animation thread a runnable object, the Game object
@@ -102,6 +117,13 @@ public class Game implements Runnable, KeyListener {
         return dimension;
     }
 
+    /* TODO PATTERN 5 of 10: GAME LOOP (from Robert Nystrom's Game Programming Patterns). run() is a loop that is
+       decoupled from user input: every ~40 ms it (1) renders a frame by asking each Movable to move() and draw()
+       itself (GamePanel.update), (2) resolves collisions, levels and spawns, (3) drains the ops queue, and (4)
+       sleeps for whatever remains of the frame budget, so the game runs at the same speed on a fast or a slow
+       machine. Input arrives asynchronously on the Event Dispatch Thread and is applied here, never the other way
+       round. The loop runs on its own daemon thread so Swing keeps repainting and listening.
+     */
     // Game implements runnable, and must have run method
     @Override
     public void run() {
@@ -162,11 +184,14 @@ public class Game implements Runnable, KeyListener {
     }
 
     /*
-    TODO The following two methods are an example of the Command design pattern. This approach involves deferring
-    mutations to collections (linked lists of Movables) while iterating over them, and then processing the mutations
-    later (in the processGameOpsQueue() method below). The Command design pattern decouples the request for an
-    operation from the  execution of the operation itself. We do this because mutating a data structure while iterating it
-    is dangerous and may lead to null-pointer or array-index-out-of-bounds exceptions, or other erroneous behavior.
+    TODO PATTERN 3 of 10: COMMAND. A GameOp is a request turned into an object: it names a receiver (the Movable) and
+    an action (ADD or REMOVE) and nothing else. checkCollisions() creates GameOps while it iterates the team lists;
+    processGameOpsQueue() executes them afterwards, when no iteration is in flight. Separating the *request* from
+    its *execution* is the whole point of Command, and here it buys two things: (1) safety, because mutating a
+    LinkedList while iterating it throws ConcurrentModificationException, and (2) thread-safety, because the Event
+    Dispatch Thread (keyPressed, e.g. firing a Bullet) and the animation thread both enqueue onto the same
+    LinkedBlockingDeque and only the animation thread drains it (a producer-consumer hand-off). See GameOp,
+    GameOpsQueue, and Chapter 43.
      */
 
     private void checkCollisions() {

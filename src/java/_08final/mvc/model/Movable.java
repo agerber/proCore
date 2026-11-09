@@ -4,9 +4,11 @@ import java.awt.*;
 import java.util.LinkedList;
 
 
-/* TODO This interface is an example of the Facade design pattern which provides a simplified
-interface to a complex subsystem or set of classes. It hides the complexity by offering a more straightforward and unified API.
-The goal is to make subsystems easier to use by providing a higher-level interface that clients can interact with.
+/* NOTE Movable is NOT the Facade design pattern, although it is often mislabeled as such. A Facade is a single class
+ that offers a simplified front door to a complicated subsystem (see SoundLoader and ImageLoader for the real
+ Facades in this code base). Movable is the model's *contract*: the seven operations the engine needs from anything
+ that lives in the game space. The controller and view program to this interface and never to Falcon or Asteroid,
+ which is why a class such as Star can implement Movable directly without extending Sprite.
  */
 public interface Movable {
 
@@ -23,19 +25,13 @@ public interface Movable {
 
 
 
-	/* TODO The following methods are examples of Observer design pattern (Lifecycle Callbacks). Lifecycle
-	 Callbacks allow an object to perform specific actions at
-	well-defined stages of its lifecycle. Lifecycle Callbacks encapsulate logic that would otherwise be scattered throughout
-	other classes, thereby making the code more organized and easier to manage.
-
-	Subject (Game): The Game class acts as the subject that triggers changes in the state of Movable objects in the
-	processGameOpsQueue() method.
-
-	Observer (Movable): Each Movable object implements the lifecycle methods (addToGame, removeFromGame). These methods are
-	called by the Game's processGameOpsQueue() method to notify the Movable objects about their state changes (e.g.,
-	being added to or removed from the game).
-
-	  */
+	/* NOTE addToGame() and removeFromGame() are lifecycle callbacks, also called HOOK METHODS, and they are NOT the
+	 Observer pattern (nothing subscribes to them; Game simply calls them on exactly one object when it drains the
+	 ops queue). Sprite supplies the default behavior (add/remove self from the list); subclasses override the hook
+	 to add a side effect at that moment in the object's life: Bullet plays a sound on add, Asteroid spawns smaller
+	 asteroids and awards points on remove, Nuke refuses to be removed before it expires. Hooks are the variable
+	 steps of the TEMPLATE METHOD that processGameOpsQueue() implements; see Sprite for the pattern annotation.
+	 */
 
 	//this is your opportunity to add sounds or perform other side effects.
 	//The 'list' parameter will be one of the following: movFriends, movFoes, movDebris, movFloaters.

@@ -110,10 +110,12 @@ class GamePanel:
                      self.fontWidth + 10,
                      Game.DIM.height - (self.fontHeight + 22))
 
-    # mirrors Java's GamePanel.update(Graphics g): creates an off-screen
-    # double-buffer, draws into its Graphics context, then blits the
-    # finished image to the on-screen tk Label in one swoop to avoid
-    # flickering.
+    # TODO PATTERN 9 of 10: DOUBLE BUFFER (Game Programming Patterns). A frame is never drawn directly to the screen.
+    # update() paints the whole scene onto an off-screen PIL image (imgOff) through a Graphics adapter, and only when
+    # every sprite and HUD element is in place does gameFrame.blit() copy the finished image to the visible tk surface
+    # in one operation. The player never sees a half-drawn frame (tearing/flicker), at the cost of one extra image's
+    # worth of memory. The two buffers are the "current" and "next" frames; here the next one is recreated each frame
+    # rather than swapped. Mirrors Java's GamePanel.update(Graphics g).
     def update(self):
         from mvc.controller.Game import Game
 

@@ -71,12 +71,13 @@ public abstract class Sprite implements Movable {
 
 
 
-    /* TODO The following methods are an example of the Template_Method design pattern. The Sprite class provides
-    the common framework for Movable, such as move(), expire(), somePosNegValue(), renderRaster(), renderVector(), etc.
-      while delegating certain details to its subclasses. Also note that Sprite omits draw() and this contract debt
-      (inherited from Movable) is passed to Sprite's subclasses
-      which must satisfy the contract by providing implementations for draw(), and this will depend on whether the
-      subclass renders as raster or vector.
+    /* TODO PATTERN 6 of 10: TEMPLATE METHOD. Sprite fixes the skeleton of an algorithm and lets subclasses fill
+       in the steps. move() below is the template: wrap at the universe edge, apply the velocity, age the sprite
+       (expire), spin it. Subclasses that need more call super.move() and add their step (Falcon adds thrust and
+       turning, Nuke adds its explode/implode radius schedule, Radar overrides move() to do nothing). draw() is the
+       deliberately missing step: Sprite leaves it abstract and supplies two helpers, renderVector() and
+       renderRaster(), so each subclass picks its rendering with one line. addToGame()/removeFromGame() are the
+       hook steps of the same idea applied to the object's lifecycle. See Chapter 43.
     */
 
     @Override
@@ -220,9 +221,12 @@ public abstract class Sprite implements Movable {
 
 
         //5: draw the polygon using the List of raw polars from above, applying mapping transforms as required.
-        /*TODO The following is an example of the Pipeline design pattern, which is a way of chaining a series of operations
-        where the output of one operation becomes the input for the next, forming a "pipeline" of transformations and
-        processing steps. This is a key concept in functional programming.
+        /* TODO PATTERN 7 of 10: PIPELINE (a functional pattern, also called Pipes and Filters). Each stage is a pure
+           Function whose output is the next stage's input: rotate the polar points by the sprite's orientation,
+           convert to cartesian, translate to the sprite's center, extract one coordinate. Because the stages are
+           values, the same pipeline is run twice, once for x and once for y, and a stage can be added, removed or
+           tested on its own. Asteroid.generateVertices() uses the same pattern to build a random polygon
+           (generate -> limit -> sorted -> map -> toArray). See Chapters 39 and 41.
          */
         g.drawPolygon(
                 polars.stream()

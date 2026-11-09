@@ -34,7 +34,14 @@ def _setDimFromEnv():
         return Dimension(1200, 700)
 
 
-# todo: refactor the code so that its in python style, and clean-up
+# TODO PATTERN 2 of 10: MODEL-VIEW-CONTROLLER (an architectural pattern). The three packages are the three roles.
+# MODEL (mvc.model): Movable, Sprite and its subclasses hold position, velocity and team and know how to move() and
+# draw() themselves, but know nothing about keyboards or windows. VIEW (mvc.view): GameFrame, GamePanel and the
+# Graphics adapter own the window and the off-screen image; GamePanel.update() asks every model object to draw itself.
+# CONTROLLER (mvc.controller): Game turns key events into model changes, runs the frame loop, detects collisions and
+# spawns sprites; CommandCenter holds the model's aggregate state. Because the roles are separate, this port keeps the
+# Java models' design while swapping the view technology (PIL + tkinter for Swing) and the input source (pygame polling
+# for Swing listeners).
 class Game:
     # ===============================================
     # FIELDS
@@ -85,6 +92,13 @@ class Game:
     def setDimFromEnv():
         return _setDimFromEnv()
 
+    # TODO PATTERN 3 of 10: COMMAND. A GameOp is a request turned into an object: it names a receiver (the Movable)
+    # and an action (ADD or REMOVE) and nothing else. checkCollisions() creates GameOps while it iterates the team
+    # lists; processGameOpsQueue() executes them afterwards, when no iteration is in flight. Separating the *request*
+    # from its *execution* is the point of Command. Here it buys safety: removing from a list while a for loop walks
+    # it silently skips elements in Python (it does not raise, as Java does), which is a worse failure. Because pygame
+    # polls input on this same thread, the queue is not needed for thread-safety in this port, unlike the Java original
+    # where the Event Dispatch Thread and the animation thread share it. See GameOp, GameOpsQueue, and Chapter 44.
     def checkCollisions(self):
 
         cc = CommandCenter.getInstance()
@@ -133,8 +147,13 @@ class Game:
             else:
                 mov.removeFromGame(list)
 
-    # The frame loop is driven by pygame: poll input events, advance and
-    # draw one frame, then sleep to cap the rate at FRAMES_PER_SECOND.
+    # TODO PATTERN 4 of 10: GAME LOOP (from Robert Nystrom's Game Programming Patterns). main() is a loop that runs
+    # at a fixed rate regardless of how fast the machine is: each pass (1) polls the input events that arrived since
+    # the last frame, (2) renders a frame by asking every Movable to move() and draw() itself (GamePanel.update),
+    # (3) resolves collisions, levels and spawns, (4) drains the ops queue, and (5) clock.tick() sleeps for whatever
+    # remains of the 40 ms frame budget. NOTE on input: pygame.event.get() is *polling*, so this port has no Observer
+    # pattern; the Java original registers Game as a KeyListener on the panel and Swing calls it back, which is Observer.
+    # Everything here runs on one thread, which is why no priorities, daemon threads or thread-safe deque are needed.
     def main(self):
         # start the theme music
         SoundLoader.playSound("dr_loop.wav")

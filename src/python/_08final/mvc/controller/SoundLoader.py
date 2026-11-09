@@ -1,6 +1,10 @@
 import pygame
 
 
+# TODO PATTERN 7 of 10: FACADE. pygame.mixer is a subsystem (init, channels, Sound objects, looping flags, a cache of
+# one-shot effects). SoundLoader puts one simple front door on it: playSound(name) and stopSound(name). Callers such
+# as Bullet and Game import nothing from pygame.mixer and never learn that looped and one-shot clips are handled
+# differently. ImageLoader is the same pattern over PIL and the directory walk.
 class SoundLoader:
     # static member
     soundDictionary = {}

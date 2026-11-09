@@ -21,6 +21,12 @@ import javax.sound.sampled.LineEvent;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
+/* TODO PATTERN 8 of 10: FACADE. The javax.sound API is a subsystem of a dozen types (AudioSystem, Clip,
+   AudioInputStream, LineUnavailableException ...), plus the thread pool that lets several one-shot clips overlap.
+   SoundLoader puts one simple front door on all of it: playSound(name) and stopSound(name). Callers such as Bullet
+   and Game import nothing from javax.sound and never learn that looped and one-shot clips are handled differently.
+   ImageLoader is the same pattern over ImageIO and the classpath walk.
+ */
 public class SoundLoader {
 
 	//classpath root under which the sounds live, e.g. "/sounds/dr_loop.wav". Maven copies

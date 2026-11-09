@@ -3,9 +3,11 @@ from abc import ABC, abstractmethod
 
 from mvc.model.prime.Point import Point
 
-# TODO This ABC is an example of the Facade design pattern which provides a simplified
-# interface to a complex subsystem or set of classes. It hides the complexity by offering a more straightforward and unified API.
-# The goal is to make subsystems easier to use by providing a higher-level interface that clients can interact with.
+# NOTE Movable is NOT the Facade design pattern, although it is often mislabeled as such. A Facade is one class that
+# puts a simple front door on a complicated subsystem (SoundLoader and ImageLoader are the real Facades here). Movable
+# is the model's *contract*: the seven operations the engine needs from anything in the game space. The controller and
+# the view program to this ABC and never to Falcon or Asteroid. In Python the ABC is a choice, not a necessity: a
+# typing.Protocol would state the same contract structurally, and a class could satisfy it without inheriting at all.
 
 class Movable(ABC):
 
@@ -39,16 +41,12 @@ class Movable(ABC):
         pass
 
 
-    # TODO The following are examples of the Observer design pattern (Lifecycle Callbacks). Lifecycle
-    # Callbacks allow an object to perform specific actions at well-defined stages of its lifecycle. Lifecycle Callbacks encapsulate
-    # logic that would otherwise be scattered throughout other classes, thereby making the code more organized and easier to manage.
-    #
-    # Subject (Game): The Game class acts as the subject that triggers changes in the state of Movable objects in the
-    # processGameOpsQueue() method.
-    #
-    # Observer (Movable): Each Movable object implements the lifecycle methods (addToGame, removeFromGame). These methods are
-    # called by the Game's processGameOpsQueue() method to notify the Movable objects about their state changes (e.g.,
-    # being added to or removed from the game).
+    # NOTE addToGame() and removeFromGame() are lifecycle callbacks, also called HOOK METHODS, and they are NOT the
+    # Observer pattern (nothing subscribes to them; Game calls them on exactly one object when it drains the ops
+    # queue). Sprite supplies the default (add/remove self from the list); subclasses override the hook to add a side
+    # effect at that moment of the object's life: Bullet plays a sound on add, Asteroid spawns smaller asteroids and
+    # awards points on remove, Nuke refuses to be removed before it expires. Hooks are the variable steps of the
+    # TEMPLATE METHOD that processGameOpsQueue() implements; see Sprite for the pattern annotation.
 
 
     # lifecycle callbacks when a movable object is added or removed from the game-space. This is your opportunity

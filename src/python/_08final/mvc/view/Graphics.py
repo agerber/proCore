@@ -10,6 +10,14 @@ from PIL import Image, ImageDraw
 # knows how to blit raster images. Graphics binds an Image + an ImageDraw
 # together and presents the same Java-style API so the Movable.draw(g)
 # contract is a direct, faithful port.
+#
+# TODO PATTERN 10 of 10: ADAPTER. The models were written against the interface of java.awt.Graphics (setColor,
+# drawPolygon, drawOval, drawString ...). PIL's ImageDraw has the same capabilities under a different interface
+# (stateless calls that take a fill argument, a separate Image for blitting). Graphics is the adapter: it wraps an
+# Image and its ImageDraw (the adaptees), stores the current color and font that PIL lacks, and translates each
+# Java-style call into the PIL call. Every Movable.draw(g) therefore ports line for line; without the adapter each
+# model class would have to be rewritten against PIL. This pattern has no counterpart in the Java original, which
+# draws on java.awt.Graphics directly.
 class Graphics:
 
     # LRU cache of pre-rasterized text glyphs, keyed by (text, font_id,

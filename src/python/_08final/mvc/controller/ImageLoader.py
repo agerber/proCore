@@ -4,6 +4,15 @@ import traceback
 from PIL import Image
 
 
+# TODO PATTERN 7 of 10 (second instance): FACADE. ImageLoader hides PIL's Image.open, path resolution and the
+# directory walk behind a single lookup, IMAGES[name]. See SoundLoader for the first instance.
+#
+# TODO PATTERN 8 of 10: FLYWEIGHT. Every PNG is decoded exactly once, when the singleton is constructed, and stored in
+# IMAGES; every sprite that needs an image shares the same PIL Image object. A hundred WhiteCloudDebris explosions hold a
+# hundred small dicts of references, not a hundred copies of nine decoded images. The image is the *intrinsic*
+# (shared, immutable) state; center, orientation and radius are the *extrinsic* state each sprite keeps for itself and
+# passes to renderRaster(). Sharing is safe only because nobody mutates the shared images; PIL's rotate() and resize()
+# return new images, which is what makes the sharing work.
 class ImageLoader:
     __instance = None
     IMAGES = {}

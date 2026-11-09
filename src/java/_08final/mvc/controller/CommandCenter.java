@@ -43,20 +43,11 @@ public class CommandCenter {
 			new Universe("DARK", new Dimension(4, 4))
 
 	};
-	/*
-	 TODO The following LinkedList<Movable> are examples of the Composite design pattern which is used to allow
-	 compositions of objects to be treated uniformly. Here are the elements of the Composite design pattern:
-
-     Component: Movable serves as the component interface. It defines common methods (move(), draw(Graphics g), etc.)
-     that all concrete implementing classes must provide.
-
-     Leaf: Concrete classes that implement Movable (e.g., Bullet, Asteroid) are the leaf nodes. They implement the
-     Movable interface and provide specific behavior.
-
-     Composite: The LinkedLists below that aggregate Movable objects (e.g., movFriends, movFoes) act as
-     composites. They manage collections of Movable objects and provide a way to iterate over and operate on them as a
-     group.
-
+	/* NOTE These four lists are NOT the Composite design pattern, although they are often mislabeled as such.
+	 In Composite, the container is itself a Component (a LinkedList<Movable> would have to implement Movable so that
+	 a group of sprites could be moved and drawn as one sprite). These are plain polymorphic collections: each list
+	 holds heterogeneous Movables (Falcon, Bullet, Asteroid, Star ...) and the engine calls move()/draw() through the
+	 interface without knowing the concrete class. That is interface polymorphism (Chapter 17), not a GoF pattern.
 	 */
 	private final LinkedList<Movable> movDebris = new LinkedList<>();
 	private final LinkedList<Movable> movFriends = new LinkedList<>();
@@ -67,9 +58,11 @@ public class CommandCenter {
 
 
 
-	/* TODO This is an example of the Singleton design pattern. The Singleton ensures that a class has one (and only
-	one) instance on the heap and provides a global point of access at instance. This is useful when you need to
-	coordinate actions among objects in your system or manage state. CommandCenter manages the state of the game.
+	/* TODO PATTERN 1 of 10: SINGLETON. CommandCenter is the one object that holds the game's state (score, level,
+	 the team lists, the ops queue), so the class guarantees a single instance: the constructor is private, the sole
+	 instance lives in a private static field, and getInstance() is the global access point that creates it lazily on
+	 first use. Cost of the pattern: global state is hard to test and the lazy check below is not thread-safe (two
+	 threads could both see null); an enum singleton or a static holder class fixes that. See Chapter 43.
 	 */
 	private static CommandCenter instance = null;
 

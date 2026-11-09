@@ -57,18 +57,11 @@ class CommandCenter:
         self.falcon = Falcon()
         self.radar = Radar()
 
-        # TODO The following LinkedList<Movable> are examples of the Composite design pattern which is used to allow
-        # compositions of objects to be treated uniformly. Here are the elements of the Composite design pattern:
-        #
-        # Component: Movable serves as the component interface. It defines common methods (move(), draw(Graphics g), etc.)
-        # that all concrete implementing classes must provide.
-        #
-        # Leaf: Concrete classes that implement Movable (e.g., Bullet, Asteroid) are the leaf nodes. They implement the
-        # Movable interface and provide specific behavior.
-        #
-        # Composite: The LinkedLists below that aggregate Movable objects (e.g., movFriends, movFoes) act as
-        # composites. They manage collections of Movable objects and provide a way to iterate over and operate on them as a
-        # group.
+        # NOTE These four lists are NOT the Composite design pattern, although they are often mislabeled as such.
+        # In Composite, the container is itself a Component (a LinkedList of Movables would have to *be* a Movable, with
+        # its own move() and draw(), so a group of sprites could be treated as one sprite). These are plain polymorphic
+        # collections: each holds heterogeneous Movables (Falcon, Bullet, Asteroid, Star ...) and the engine calls
+        # move()/draw() on each without knowing its class. In Python that is duck typing plus the ABC, not a pattern.
 
         self.movDebris = LinkedList()
         self.movFriends = LinkedList()
@@ -81,9 +74,11 @@ class CommandCenter:
         self.diffY = 0
 
 
-    # TODO This is an example of the Singleton design pattern. The Singleton ensures that a class has one (and only
-    # one) instance on the heap and provides a global point of access at instance. This is useful when you need to
-    # coordinate actions among objects in your system or manage state. CommandCenter manages the state of the game.
+    # TODO PATTERN 1 of 10: SINGLETON. CommandCenter holds the game's aggregate state (score, level, the team lists,
+    # the ops queue), so the class guarantees one instance: __new__ above refuses to create a second object, the sole
+    # instance lives in the private class attribute __instance, and getInstance() is the global access point that
+    # creates it lazily. ImageLoader uses the same __new__ idiom. The idiomatic Python alternative is simply a module:
+    # a module is imported once, cached in sys.modules, and its globals are a singleton for free. See Chapter 44.
 
     @staticmethod
     def getInstance():
